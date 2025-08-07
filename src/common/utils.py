@@ -60,11 +60,22 @@ def convert_to_relative(point, frame):
     :param frame:   The image to use as a reference.
     :return:        The given point in relative coordinates.
     """
-
     x = point[0] / frame.shape[1]
     y = point[1] / config.capture.minimap_ratio / frame.shape[0]
     return x, y
+def convert_to_absolute(point, frame):
+    """
+    Converts POINT into absolute coordinates (in pixels) based on FRAME.
+    Normalizes the units of the vertical axis to equal those of the horizontal
+    axis by using config.mm_ratio.
+    :param point:   The point in relative coordinates.
+    :param frame:   The image to use as a reference.
+    :return:        The given point in absolute coordinates.
+    """
 
+    x = int(round(point[0] * frame.shape[1]))
+    y = int(round(point[1] * config.capture.minimap_ratio * frame.shape[0]))
+    return x, y
 
 
 def load_templates(folder):
@@ -84,3 +95,26 @@ def capture_minimap(x1,y1, x2,y2):
             monitor = {"left": int(x1), "top": int(y1), "width": int(x2 - x1), "height": int(y2 - y1)}
             img = np.array(sct.grab(monitor))[:, :, :3]
             cv2.imwrite("minimap_capture.png", img)
+
+
+def save_ndarray_as_img(arr: np.ndarray, filepath: str = "capture.png"):
+    """
+    numpy 배열을 이미지 파일(PNG/JPG 등)로 저장한다.
+
+    Parameters
+    ----------
+    arr : np.ndarray
+        저장할 영상 배열(BGR·BGRA·GRAY 모두 가능).
+    filepath : str
+        저장 경로와 파일 이름. 확장자에 따라 포맷 결정.
+    """
+    # ── (선택) float 배열일 경우 0~1 → 0~255 로 변환 ──
+    if arr.dtype == np.float32 or arr.dtype == np.float64:
+        arr = np.clip(arr * 255, 0, 255).astype(np.uint8)
+
+    # ── (선택) 알파 채널(BGRA) → BGR로 변환 ──
+    if arr.shape[2] == 4:                      # BGRA
+        arr = cv2.cvtColor(arr, cv2.COLOR_BGRA2BGR)
+
+    cv2.imwrite(filepath, arr)
+    print(f"[INFO] Saved to {filepath}")

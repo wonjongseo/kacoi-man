@@ -128,16 +128,19 @@ class Capture:
                 tl[0] + MINIMAP_BOTTOM_BORDER,
                 tl[1] + MINIMAP_TOP_BORDER
             )
+            print(f'mm_tl : {mm_tl}')
+            
         
             mm_br = (
                 max(mm_tl[0] + PT_WIDTH, br[0] - MINIMAP_BOTTOM_BORDER), # 왜 ?
                 max(mm_tl[1] + PT_HEIGHT, br[1] - MINIMAP_BOTTOM_BORDER)
             )
+            print(f'mm_br : {mm_br}')
             
             self.minimap_ratio = (mm_br[0] - mm_tl[0]) / (mm_br[1] - mm_tl[1]) # 계산식 이해 안된데 ?
             self.minimap_sample = self.frame[mm_tl[1]:mm_br[1], mm_tl[0]:mm_br[0]] # 계산식 이해 안된데 ?
             self.calibrated = True
-
+            
             with mss.mss() as self.sct:
                 while True:
                     if not self.calibrated:
@@ -151,11 +154,12 @@ class Capture:
 
                     # 잘라 놓은 샘플 좌표로 미니맵만 잘라냄
                     minimap = self.frame[ mm_tl[1]:mm_br[1], mm_tl[0]:mm_br[0] ]
-
                     player = utils.multi_match(minimap, PLAYER_TEMPLATE, threshold=0.8)
-
+                    
                     if player:
                         config.player_pos = utils.convert_to_relative(player[0], minimap)
+                        config.player_pos_ab = (self.window['left'] + mm_tl[0] + player[0][0], self.window['top']  + mm_tl[1] + player[0][1])
+                        
                     
                     player_name = utils.single_match(self.frame, PLAYER_NAME_TEMPLATE)
 

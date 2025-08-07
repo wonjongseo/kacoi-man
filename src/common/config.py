@@ -5,8 +5,8 @@ TITLE = 'MapleStory Worlds'
 #################################
 # The player's position relative to the minimap
 player_pos = (0, 0)
+player_pos_ab = (0, 0)
 player_name_pos = None
-
 
 # Describes whether the main bot loop is currently running or not
 enabled = False
@@ -17,6 +17,7 @@ should_attack = False
 # Represents the current shortest path that the bot is taking
 path = []
 
+attack_count  = 0
 
 
 # Shares the main bot loop

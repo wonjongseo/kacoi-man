@@ -40,8 +40,8 @@ class Listener:
                         config.bot.keydown = 'left'
                     elif kb.is_pressed("right"):
                         config.bot.keydown = 'right'
-                    if kb.is_pressed("shift"):
-                        print('shift down')
+                    # if kb.is_pressed("shift"):
+                    #     print('shift down')
                     
             except Exception as e:
                 print(f"[Listener Error] {e}")

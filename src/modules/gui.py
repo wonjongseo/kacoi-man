@@ -3,7 +3,7 @@ import time
 from src.common import config
 import tkinter as tk
 from tkinter import ttk
-from src.gui import View
+from src.gui import Edit, View
 
 
 class GUI:
@@ -29,10 +29,26 @@ class GUI:
         # self.navigation = ttk.Notebook(self.root)
         self.navigation = ttk.Notebook(self.root)
         self.view = View(self.navigation)
+        self.edit = Edit(self.navigation)
         
         self.navigation.pack(expand=True, fill='both')
-        # self.navigation.bind('<<NotebookTabChanged>>', self._resize_window)
+        self.navigation.bind('<<NotebookTabChanged>>', self._resize_window)
         self.root.focus()
+
+    def _resize_window(self, e):
+        """Callback to resize entire Tkinter window every time a new Page is selected."""
+
+        nav = e.widget
+        curr_id = nav.select()
+        nav.nametowidget(curr_id).focus()      # Focus the current Tab
+        page = nav.tab(curr_id, 'text')
+        if self.root.state() != 'zoomed':
+            if page in GUI.RESOLUTIONS:
+                self.root.geometry(GUI.RESOLUTIONS[page])
+            else:
+                self.root.geometry(GUI.RESOLUTIONS['DEFAULT'])
+
+
 
     def start(self) :
 
