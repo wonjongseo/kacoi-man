@@ -1,0 +1,2 @@
+pip install numpy mss opencv-python-headless keyboard pyautogui Pillow
+

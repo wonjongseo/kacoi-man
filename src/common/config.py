@@ -1,5 +1,12 @@
 TITLE = 'MapleStory Worlds'
 
+
+#########################
+#       Constants       #
+#########################
+RESOURCES_DIR = 'resources'
+
+
 #################################
 #       Global Variables        #
 #################################
@@ -17,8 +24,14 @@ should_attack = False
 # Represents the current shortest path that the bot is taking
 path = []
 
-attack_count  = 0
 
+
+
+#############################
+#       Shared Modules      #
+#############################
+# A Routine object that manages the 'machine code' of the current routine
+routine = None
 
 # Shares the main bot loop
 bot = None

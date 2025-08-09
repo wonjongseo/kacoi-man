@@ -1,0 +1,29 @@
+{
+  "Key": {
+    "JUMP": "space",
+    "FLASH_JUMP": "space",
+    "IMPALE": "1",
+    "RESONANCE": "2",
+    "PLUMMET": "r",
+    "FEATHER_FLOAT": "f",
+    "HIGH_RISE": "ctrl",
+    "WEAVE_INFUSION": "f1",
+    "HERO_OF_THE_FLORA": "f2",
+    "SPEED_INFUSION": "f3",
+    "HOLY_SYMBOL": "f4",
+    "SHARP_EYE": "f5",
+    "COMBAT_ORDERS": "f6",
+    "ADVANCED_BLESSING": "f7",
+    "CONVERSION_OVERDRIVE": "f8",
+    "WEAPON_AURA": "f9",
+    "DIVINE_WRATH": "end",
+    "GRANDIS_GODDESS": "home"
+  },
+  "step_strategy": "platformer",
+  "commands": {
+    "move": { "max_steps": 20 },
+    "adjust": { "max_steps": 5 },
+    "walk": { "duration": 0.25 },
+    "fall": { "distance": 15.0 }
+  }
+}

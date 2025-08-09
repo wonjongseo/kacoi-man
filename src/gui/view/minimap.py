@@ -3,6 +3,8 @@ from src.common import config
 from src.gui.interfaces import LabelFrame
 import cv2
 import tkinter as tk
+from src.common import config, utils
+
 from PIL import ImageTk, Image
 class Minimap(LabelFrame):
     def __init__(self, parent, **kwargs):
@@ -25,6 +27,30 @@ class Minimap(LabelFrame):
         self.container = None
         self._img = None
 
+
+    def draw_point(self, location):
+        """Draws a circle representing a Point centered at LOCATION."""
+
+        if config.capture.minimap_sample is not None:
+            minimap = cv2.cvtColor(config.capture.minimap_sample, cv2.COLOR_BGR2RGB)
+            img = self.resize_to_fit(minimap)
+            utils.draw_location(img, location, (0, 255, 0))
+            self.draw(img)
+        
+    def draw(self, img):
+        """Draws IMG onto the Canvas."""
+
+        if config.layout:
+            config.layout.draw(img)     # Display the current Layout
+
+        img = ImageTk.PhotoImage(Image.fromarray(img))
+        if self.container is None:
+            self.container = self.canvas.create_image(self.WIDTH // 2,
+                                                      self.HEIGHT // 2,
+                                                      image=img, anchor=tk.CENTER)
+        else:
+            self.canvas.itemconfig(self.container, image=img)
+        self._img = img 
     def display_minimap(self):
         """미니맵 이미지와 좌표를 업데이트한다."""
         minimap = config.capture.minimap

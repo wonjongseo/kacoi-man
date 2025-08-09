@@ -1,20 +1,48 @@
+import math
+import queue
+import threading
 import cv2
 import os
 import mss
 import numpy as np
 from src.common import config
 
-def center_from_bounds(top_left, bottom_right):
+
+
+def run_if_enabled(function):
     """
-    top_left: (x1, y1) 튜플 — 영역의 좌상단 좌표
-    bottom_right: (x2, y2) 튜플 — 영역의 우하단 좌표
-    반환: (cx, cy) 튜플 — 영역의 중심 좌표
+    Decorator for functions that should only run if the bot is enabled.
+    :param function:    The function to decorate.
+    :return:            The decorated function.
     """
-    x1, y1 = top_left
-    x2, y2 = bottom_right
-    cx = (x1 + x2) / 2
-    cy = (y1 + y2) / 2
-    return cx, cy
+
+    def helper(*args, **kwargs):
+        if config.enabled:
+            return function(*args, **kwargs)
+    return helper
+
+
+def run_if_disabled(message=''):
+    """
+    Decorator for functions that should only run while the bot is disabled. If MESSAGE
+    is not empty, it will also print that message if its function attempts to run when
+    it is not supposed to.
+    """
+
+    def decorator(function):
+        def helper(*args, **kwargs):
+            if not config.enabled:
+                return function(*args, **kwargs)
+            elif message:
+                print(message)
+        return helper
+    return decorator
+
+def print_separator():
+    """Prints a 3 blank lines for visual clarity."""
+
+    print('\n\n')
+
 
 def single_match(frame, template):
     """
@@ -63,6 +91,7 @@ def convert_to_relative(point, frame):
     x = point[0] / frame.shape[1]
     y = point[1] / config.capture.minimap_ratio / frame.shape[0]
     return x, y
+
 def convert_to_absolute(point, frame):
     """
     Converts POINT into absolute coordinates (in pixels) based on FRAME.
@@ -78,6 +107,83 @@ def convert_to_absolute(point, frame):
     return x, y
 
 
+def filter_color(img, ranges):
+    """
+    Returns a filtered copy of IMG that only contains pixels within the given RANGES.
+    on the HSV scale.
+    :param img:     The image to filter.
+    :param ranges:  A list of tuples, each of which is a pair upper and lower HSV bounds.
+    :return:        A filtered copy of IMG.
+    """
+
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(hsv, ranges[0][0], ranges[0][1])
+    for i in range(1, len(ranges)):
+        mask = cv2.bitwise_or(mask, cv2.inRange(hsv, ranges[i][0], ranges[i][1]))
+
+    # Mask the image
+    color_mask = mask > 0
+    result = np.zeros_like(img, np.uint8)
+    result[color_mask] = img[color_mask]
+    return result
+
+
+def capture_minimap(x1,y1, x2,y2):
+        with mss.mss() as sct:
+            monitor = {"left": int(x1), "top": int(y1), "width": int(x2 - x1), "height": int(y2 - y1)}
+            img = np.array(sct.grab(monitor))[:, :, :3]
+            cv2.imwrite("minimap_capture.png", img)
+
+
+
+
+##########################
+#       Threading        #
+##########################
+class Async(threading.Thread):
+    def __init__(self, function, *args, **kwargs):
+        super().__init__()
+        self.queue = queue.Queue()
+        self.function = function
+        self.args = args
+        self.kwargs = kwargs
+
+    def run(self):
+        self.function(*self.args, **self.kwargs)
+        self.queue.put('x')
+
+    def process_queue(self, root):
+        def f():
+            try:
+                self.queue.get_nowait()
+            except queue.Empty:
+                root.after(100, self.process_queue(root))
+        return f
+    
+
+def async_callback(context, function, *args, **kwargs):
+    """Returns a callback function that can be run asynchronously by the GUI."""
+
+    def f():
+        task = Async(function, *args, **kwargs)
+        task.start()
+        context.after(100, task.process_queue(context))
+    return f
+
+
+
+def center_from_bounds(top_left, bottom_right):
+    """
+    top_left: (x1, y1) 튜플 — 영역의 좌상단 좌표
+    bottom_right: (x2, y2) 튜플 — 영역의 우하단 좌표
+    반환: (cx, cy) 튜플 — 영역의 중심 좌표
+    """
+    x1, y1 = top_left
+    x2, y2 = bottom_right
+    cx = (x1 + x2) / 2
+    cy = (y1 + y2) / 2
+    return cx, cy
+
 def load_templates(folder):
     temps = []
     for f in os.listdir(folder):
@@ -90,31 +196,3 @@ def load_templates(folder):
     return temps
 
 
-def capture_minimap(x1,y1, x2,y2):
-        with mss.mss() as sct:
-            monitor = {"left": int(x1), "top": int(y1), "width": int(x2 - x1), "height": int(y2 - y1)}
-            img = np.array(sct.grab(monitor))[:, :, :3]
-            cv2.imwrite("minimap_capture.png", img)
-
-
-def save_ndarray_as_img(arr: np.ndarray, filepath: str = "capture.png"):
-    """
-    numpy 배열을 이미지 파일(PNG/JPG 등)로 저장한다.
-
-    Parameters
-    ----------
-    arr : np.ndarray
-        저장할 영상 배열(BGR·BGRA·GRAY 모두 가능).
-    filepath : str
-        저장 경로와 파일 이름. 확장자에 따라 포맷 결정.
-    """
-    # ── (선택) float 배열일 경우 0~1 → 0~255 로 변환 ──
-    if arr.dtype == np.float32 or arr.dtype == np.float64:
-        arr = np.clip(arr * 255, 0, 255).astype(np.uint8)
-
-    # ── (선택) 알파 채널(BGRA) → BGR로 변환 ──
-    if arr.shape[2] == 4:                      # BGRA
-        arr = cv2.cvtColor(arr, cv2.COLOR_BGRA2BGR)
-
-    cv2.imwrite(filepath, arr)
-    print(f"[INFO] Saved to {filepath}")

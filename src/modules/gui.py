@@ -1,9 +1,9 @@
 import threading
 import time
-from src.common import config
+from src.common import config,settings
 import tkinter as tk
 from tkinter import ttk
-from src.gui import Edit, View
+from src.gui import Edit, View, Menu
 
 
 class GUI:
@@ -23,8 +23,8 @@ class GUI:
         self.routine_var = tk.StringVar() # 탭 간 공유하거나 위젯에 바인딩할 문자열 변수를 하나 생성
 
         # Build the GUI
-        # self.menu = Menu(self.root)
-        # self.root.config(menu=self.menu)
+        self.menu = Menu(self.root)
+        self.root.config(menu=self.menu)
 
         # self.navigation = ttk.Notebook(self.root)
         self.navigation = ttk.Notebook(self.root)
@@ -47,8 +47,22 @@ class GUI:
                 self.root.geometry(GUI.RESOLUTIONS[page])
             else:
                 self.root.geometry(GUI.RESOLUTIONS['DEFAULT'])
+    def set_routine(self, arr):
+        self.routine_var.set(arr)
 
+    def clear_routine_info(self):
+        """
+        Clears information in various GUI elements regarding the current routine.
+        Does not clear Listboxes containing routine Components, as that is handled by Routine.
+        """
 
+        # self.view.details.clear_info()
+        # self.view.status.set_routine('')
+
+        self.edit.minimap.redraw()
+        self.edit.routine.commands.clear_contents()
+        self.edit.routine.commands.update_display()
+        self.edit.editor.reset()
 
     def start(self) :
 
@@ -64,6 +78,14 @@ class GUI:
         while True:
             self.view.minimap.display_minimap()
             time.sleep(delay)
+        
+    def _save_layout(self):
+        """Periodically saves the current Layout object."""
+
+        while True:
+            if config.layout is not None and settings.record_layout:
+                config.layout.save()
+            time.sleep(5)
 
 
 

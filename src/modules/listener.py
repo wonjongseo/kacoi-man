@@ -5,6 +5,8 @@ import winsound
 import keyboard as kb
 from src.common import config, utils
 
+
+
 class Listener: 
     def __init__(self):
         config.listener = self
@@ -14,7 +16,7 @@ class Listener:
 
         self.thread = threading.Thread(target=self._main)
         self.thread.daemon = True
-    
+        
     def start(self):
         """
         Starts listening to user inputs.
@@ -37,9 +39,9 @@ class Listener:
                         Listener.toggle_enabled()
 
                     if kb.is_pressed("left"):
-                        config.bot.keydown = 'left'
+                       config.bot.keydown = 'left'
                     elif kb.is_pressed("right"):
-                        config.bot.keydown = 'right'
+                       config.bot.keydown = 'right'
                     # if kb.is_pressed("shift"):
                     #     print('shift down')
                     

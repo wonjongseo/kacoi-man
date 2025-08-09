@@ -8,6 +8,7 @@ import time
 import mss.windows
 import pygetwindow as gw
 import numpy as np
+from src.modules.potionManager import PotionManager
 from src.common import config, utils
 from ctypes import wintypes
 import pyautogui
@@ -40,8 +41,15 @@ PLAYER_NAME_TEMPLATE = cv2.imread('assets/charactor.png', 0)
 PLAYER_HEIGHT = 70 # 실제 캐릭터 높이
 
 #
-MONSTERS_FOLDER = 'assets/monsters/henesisu'
+MONSTERS_FOLDER = 'assets/monsters/pigsBitch'
 MONSTER_TEMPLATES = utils.load_templates(MONSTERS_FOLDER)
+
+
+
+
+
+
+
 
 class Capture:
     """
@@ -81,9 +89,24 @@ class Capture:
         self.thread = threading.Thread(target=self._main)
         self.thread.daemon = True
 
+        # self.potionThread = threading.Thread(target=self._potionMain)
+        # self.potionThread.daemon = True
+
+        threading.Thread(
+        target=PotionManager(
+            bar_h_margin=2,      # 템플릿이 바 안쪽만 찍혔으면 0~2px 여유
+            bar_v_margin=0,
+            hp_thresh=0.4,       # 60 % 미만에서 사용
+            mp_thresh=0.5
+        ).loop,
+        daemon=True
+    ).start()
+
+
     def start(self): 
         print('\n[~] Started video capture')
         self.thread.start()
+
 
     def _main(self):
         """Constantly monitors the player's position and in-game events."""
@@ -128,14 +151,11 @@ class Capture:
                 tl[0] + MINIMAP_BOTTOM_BORDER,
                 tl[1] + MINIMAP_TOP_BORDER
             )
-            print(f'mm_tl : {mm_tl}')
-            
-        
+          
             mm_br = (
                 max(mm_tl[0] + PT_WIDTH, br[0] - MINIMAP_BOTTOM_BORDER), # 왜 ?
                 max(mm_tl[1] + PT_HEIGHT, br[1] - MINIMAP_BOTTOM_BORDER)
             )
-            print(f'mm_br : {mm_br}')
             
             self.minimap_ratio = (mm_br[0] - mm_tl[0]) / (mm_br[1] - mm_tl[1]) # 계산식 이해 안된데 ?
             self.minimap_sample = self.frame[mm_tl[1]:mm_br[1], mm_tl[0]:mm_br[0]] # 계산식 이해 안된데 ?
@@ -187,12 +207,12 @@ class Capture:
                         px, py = config.player_name_pos  # px = X, py = Y
 
                         if config.bot.keydown is "left":
-                            x1, x2 = max(0, px - 250), px
+                            x1, x2 = max(0, px - 300), px
                         else:
-                            x1, x2 = px, min(self.frame.shape[1], px + 250)
+                            x1, x2 = px, min(self.frame.shape[1], px + 300)
                     
-                        y1 = max(0, py - 30)
-                        y2 = min(self.frame.shape[0], py + 30)
+                        y1 = max(0, py - 100)
+                        y2 = min(self.frame.shape[0], py + 100)
 
                         x1, x2, y1, y2 = map(int, (x1, x2, y1, y2))
 
@@ -208,17 +228,19 @@ class Capture:
                             # 템플릿이 더 크면 스킵
                             if h_img < h_tpl or w_img < w_tpl:
                                 continue
-
                             res = cv2.matchTemplate(gray_area, tpl, cv2.TM_CCOEFF_NORMED)
-
                             if np.any(res >= 0.7):
                                 # # ── 몬스터 감지 시 한 번만 실행 ──
                                 config.bot.found_monster = True
+                                # pyautogui.keyUp('z')
+                                # pyautogui.keyDown("shift")
                                 utils.capture_minimap(x1, y1 , x2,  y2)
                                 break
                         else:
                             config.bot.found_monster = False
+                            
                             # pyautogui.keyUp("shift")
+                            # pyautogui.keyDown('z')
 
                     time.sleep(0.001)
                        
