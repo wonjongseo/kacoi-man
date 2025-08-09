@@ -31,10 +31,14 @@ class Notifier:
         self.mixer = pygame.mixer.music
 
         self.ready = False
+
+        self.other_detected = True
+        self.room_change_threshold = 0.9
+
+        self.cnt_found_other = 0 
         self.thread = threading.Thread(target=self._main)
         self.thread.daemon = True
-
-        self.room_change_threshold = 0.9
+        
     
     def start(self):
         """Starts this Notifier's thread."""
@@ -46,7 +50,6 @@ class Notifier:
     def _main(self):
         self.ready = True
         prev_others = 0
-        rune_start_time = time.time()
         while True:
             if config.enabled:
                 frame = config.capture.frame
@@ -60,15 +63,23 @@ class Notifier:
                 
                 filtered = utils.filter_color(minimap, OTHER_RANGES)
                 others = len(utils.multi_match(filtered, OTHER_TEMPLATE, threshold=0.5))
-                if others > 0 :
-                    self._ping('ding')
+                if others != prev_others:
+                    if others > prev_others:
+                        self.cnt_found_other += 1
+                        if self.cnt_found_other == 3:
+                            pygame.mixer.music.play(-1)
+                        self.other_detected = True
+                    else:
+                        if self.cnt_found_other > 0:
+                            self.cnt_found_other -= 1
+                        else:
+                            pygame.mixer.music.stop()
+                        if self.cnt_found_other == 0:
+                            self.other_detected = False
+                    prev_others = others
+                    
                 
-                # config.stage_fright = others > 0
-                # if others != prev_others:
-                #     if others > prev_others:
-                #         self._ping('ding')
-                #     prev_others = others
-            time.sleep(0.05)
+            time.sleep(3)
 
     def _alert(self, name, volume=0.75):
         """

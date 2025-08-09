@@ -53,7 +53,7 @@ class Listener:
         """Resumes or pauses the current routine. Plays a sound to notify the user."""
 
         config.enabled = not config.enabled
-
+    
         if config.enabled:
             winsound.Beep(784, 333)     # G5
         else:

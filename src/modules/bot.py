@@ -49,7 +49,7 @@ class Bot:
 
         self._kb_prev_x = None
         self._kb_last_event_t = 0.0
-        self._kb_px = 2.0               # 이 크기 이상 반대로 튀면 '넉백'으로 간주
+        self._kb_px = 1.0               # 이 크기 이상 반대로 튀면 '넉백'으로 간주
         self._kb_cooldown = 0.6         # 넉백 감지 후 재트리거 쿨타임
         self._kb_attack_key = 'shift'   # 넉백 시 한번 쓸 공격키('shift' 권장, 'z'로 바꿔도 됨)
         self._kb_ignore_after_jump = 0.25  # 우리가 방금 점프한 직후는 넉백으로 보지 않기
@@ -213,7 +213,6 @@ class Bot:
                 if self.reached(wp):
                     self.do_action(wp)
                     self.route.advance()
-
             
                 else:
                     self.move_toward(target_x, act)
