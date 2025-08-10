@@ -42,9 +42,9 @@ class Bot:
         self._max_jump_tries = 1           # 점프 재시도 횟수 (원하면 1로 줄여도 됨)
 
         # 튜닝 파라미터
-        self._stuck_eps_px = 2.0           # 이 픽셀 이하로만 움직이면 "안 움직임"으로 간주
-        self._stuck_confirm_sec = 0.2     # 이 시간 이상 정체면 막힘 확정
-        self._jump_cooldown = 0.4          # 점프 시도 간 최소 간격(스팸 방지)
+        self._stuck_eps_px = 1.0           # 이 픽셀 이하로만 움직이면 "안 움직임"으로 간주
+        self._stuck_confirm_sec = 0.01     # 이 시간 이상 정체면 막힘 확정
+        self._jump_cooldown = 0.1          # 점프 시도 간 최소 간격(스팸 방지)
         self._last_jump_t = 0.0
 
         self._kb_prev_x = None
@@ -133,12 +133,11 @@ class Bot:
         x, _ = pos
 
         # 좌우 키를 실제로 누르고 있을 때만 체크
-        if not (self.left_down or self.right_down):
-            self._stuck_since = None
-            self._last_x = x
-            self._jump_tries = 0
-            print('2')
-            return False
+        # if not (self.left_down or self.right_down):
+        #     self._stuck_since = None
+        #     self._last_x = x
+        #     self._jump_tries = 0
+        #     return False
 
         # 첫 측정
         if self._last_x is None:
@@ -157,6 +156,7 @@ class Bot:
 
             # 정체가 충분히 이어졌고, 쿨다운도 지났으면 점프
             if (now - self._stuck_since) >= self._stuck_confirm_sec and (now - self._last_jump_t) >= self._jump_cooldown:
+                print("if (now - self._stuck_since) >= self._stuck_confirm_sec and (now - self._last_jump_t) >= self._jump_cooldown:")
                 pyautogui.press('alt')     # ← 점프!
                 self._last_jump_t = now
                 self._jump_tries += 1
@@ -170,7 +170,6 @@ class Bot:
             # 정상 이동 중이면 상태 리셋
             self._stuck_since = None
             self._jump_tries = 0
-        print('5')
         return False
     def start(self):
         """
@@ -189,7 +188,6 @@ class Bot:
                 continue
 
             if self.found_monster :
-                print("몬스터 감지")
                 self.shift_down = True
                 pyautogui.keyUp("z")
                 pyautogui.keyDown("shift")
@@ -227,7 +225,7 @@ class Bot:
         cur_x = config.player_pos_ab[0]
         dx = target_x - cur_x
         
-        print(f"[MOVE] cur_x={cur_x:3}  target_x={target_x:3}  dx={dx:+3}")
+        # print(f"[MOVE] cur_x={cur_x:3}  target_x={target_x:3}  dx={dx:+3}")
         thresh = 1 if action == "ladder" else 5   # ★ 차별화
         
         self._ensure_key('z',  'z_down', True)
@@ -280,15 +278,15 @@ class Bot:
         else:
             # 나머지는 x, y 모두 여유 있게
             hit=  dx <= 6 and dy <= 6
-        print(f"[REACHED?] wp#{self.route.index} "
-                  f"dx={dx:.1f} dy={dy:.1f}  → {hit}")
+        # print(f"[REACHED?] wp#{self.route.index} "
+        #           f"dx={dx:.1f} dy={dy:.1f}  → {hit}")
         return hit
     
     def do_action(self,  wp=None):
         me_x = config.player_pos_ab[0]
 
         if wp["action"] == "jump":
-            print(f"[점프] 나의 X값: {me_x}, Target X값: {wp["x"]}")
+            # print(f"[점프] 나의 X값: {me_x}, Target X값: {wp["x"]}")
             count = wp.get("count", 1) if wp else 1
             
             for _ in range(count):
@@ -335,13 +333,13 @@ class Bot:
 
                     # 0.6 s 동안 y 변화가 없으면 실패로 간주
                     if time.time() - stall_t > 0.6:
-                        print("[WARN] 사다리 정체 → 중단")
+                        # print("[WARN] 사다리 정체 → 중단")
                         return False
 
                     # ── ③ 전역 타임아웃 ──────────────────────
                     if time.time() - start_t > max_wait:
-                        print("[WARN] 사다리 타임아웃 → 중단")
-                        print("    ↳ time-out while climbing")
+                        # print("[WARN] 사다리 타임아웃 → 중단")
+                        # print("    ↳ time-out while climbing")
                         return False
 
                     time.sleep(0.05)

@@ -91,7 +91,8 @@ class Capture:
 
         # self.potionThread = threading.Thread(target=self._potionMain)
         # self.potionThread.daemon = True
-
+        
+        self.window_resized = False
         threading.Thread(
         target=PotionManager(
             bar_h_margin=2,      # 템플릿이 바 안쪽만 찍혔으면 0~2px 여유
@@ -115,16 +116,18 @@ class Capture:
             효과: GDI 호출 시 CAPTUREBLT 플래그를 끔으로써, 예컨대 창 위에 다른 창이 겹쳐 있더라도 비트맵(BLT) 병합 과정을 생략
         """
         mss.windows.CAPTUREBLT = 0
-
-        windows = gw.getWindowsWithTitle(config.TITLE)
-        if windows:
-            win = windows[0]
-            win.moveTo(0, 0)
-            win.resizeTo(970, 700)
-            config.TITLE = win.title
-            print(f"[INFO] '{win.title}' 창 크기 설정 완료.")
-        else:
-            print(f"[ERROR] 창을 찾을 수 없음: '{config.TITLE}'")
+        while self.window_resized is False:
+            windows = gw.getWindowsWithTitle(config.TITLE)
+            if windows:
+                win = windows[0]
+                win.moveTo(0, 0)
+                win.resizeTo(970, 700)
+                config.TITLE = win.title
+                print(f"[INFO] '{win.title}' 창 크기 설정 완료.")
+                self.window_resized = True
+                time.sleep(0.5)
+            else:
+                print(f"[ERROR] 창을 찾을 수 없음: '{config.TITLE}'")
 
         while True:
             handle = user32.FindWindowW(None, config.TITLE)
