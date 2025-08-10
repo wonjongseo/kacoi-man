@@ -1,14 +1,21 @@
 
 from src.routine.components import Point
 
+
+# route_ptrol = [ 헤네시스동쪽풀숲
+
+# ]
 route_ptrol = [
-{'x': 146, 'y' : 141-43 ,'action' : 'move'},
+{'x': 146,  'y' : 141-43 ,'action' : 'move'},
 {'x': 116, 'y' :   145-43 ,'action' : 'jump'},
 {'x': 66, 'y' :   145-43 ,'action' : 'jump'},
 {'x': 38, 'y' :   41-43 ,'action' : 'move'},
-{'x': 78, 'y' :  145-43 ,'action' : 'jump'},
+{'x': 78, 'y' : 145-43 ,'action' : 'jump'},
 {'x': 128, 'y' :  145-43 ,'action' : 'jump'},
 {'x': 147, 'y' :  141-43 ,'action' : 'move'},
+    # {'x': 147, 'y' :  0.407 ,'action' : 'move'}
+
+
     # {"x": 121, "y":158, "action":"jump"},
     # {"x": 94, "y":144, "action":"move"},
     # {"x": 80, "y":144, "end_y": 129, "action":"ladder"},

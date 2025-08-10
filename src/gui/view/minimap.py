@@ -76,7 +76,7 @@ class Minimap(LabelFrame):
 
         # ----- 좌표 표시 -----
         try:
-            x, y = config.player_pos_ab          # (예: (123, 456))
+            x, y = config.player_pos_ab         # (예: (123, 456))
             self.coord_var.set(f"x: {x}, y: {y}")
         except AttributeError:
             # 값이 아직 없으면 그대로 둠

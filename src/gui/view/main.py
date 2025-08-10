@@ -14,7 +14,4 @@ class View(Tab):
         self.minimap = Minimap(self)
         self.minimap.grid(row=0, column=2, sticky=tk.NSEW, padx=10, pady=10)
 
-    def display_minimap(self):
-        """Updates the Main page with the current minimap."""
-        print("aas")
-        
+ 

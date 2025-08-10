@@ -3,8 +3,8 @@ import time
 from src.command_book.command_book import CommandBook
 from src.constant import route_ptrol
 import pyautogui
-from src.common import config, utils
-from src.routine.routine import Routine
+from src.common import config, utils,settings
+# from src.routine.routine import Routine
 
 class RoutePatrol:
     
@@ -25,7 +25,7 @@ class Bot:
         config.bot = self
 
         self.command_book = None            # CommandBook instance
-        config.routine = Routine()
+        # config.routine = Routine()
 
         self.ready = False
         self.thread = threading.Thread(target=self._main)
@@ -35,7 +35,6 @@ class Bot:
         self.shift_down = self.left_down = self.up_down = self.right_down = self.z_down = False
         self.route = RoutePatrol(route_ptrol)   
 
-
         self._last_x = None
         self._stuck_since = None
         self._jump_tries = 0
@@ -44,7 +43,7 @@ class Bot:
         # 튜닝 파라미터
         self._stuck_eps_px = 1.0           # 이 픽셀 이하로만 움직이면 "안 움직임"으로 간주
         self._stuck_confirm_sec = 0.01     # 이 시간 이상 정체면 막힘 확정
-        self._jump_cooldown = 0.1          # 점프 시도 간 최소 간격(스팸 방지)
+        self._jump_cooldown = 0.01          # 점프 시도 간 최소 간격(스팸 방지)
         self._last_jump_t = 0.0
 
         self._kb_prev_x = None
@@ -94,27 +93,24 @@ class Bot:
         self._kb_prev_x = x
         now = time.time()
 
-        # 방금 우리가 점프한 직후의 x변동은 무시
+        # # 방금 우리가 점프한 직후의 x변동은 무시
         if (now - self._last_jump_t) < self._kb_ignore_after_jump:
             return False
-
         # 오른쪽 진행 중인데 x가 감소(=왼쪽으로 튐)
-        if moving_right and dx <= -self._kb_px and (now - self._kb_last_event_t) >= self._kb_cooldown:
+        if moving_right and dx + 1 <= -self._kb_px and (now - self._kb_last_event_t) >= self._kb_cooldown:
             print(f"[KB] knockback while RIGHT (dx={dx:.1f}) → attack once")
             self._attack_once()
             self._kb_last_event_t = now
             return True
 
         # 왼쪽 진행 중인데 x가 증가(=오른쪽으로 튐)
-        if moving_left and dx >= self._kb_px and (now - self._kb_last_event_t) >= self._kb_cooldown:
+        if moving_left and dx -1 >= self._kb_px and (now - self._kb_last_event_t) >= self._kb_cooldown:
             print(f"[KB] knockback while LEFT (dx={dx:.1f}) → attack once")
             self._attack_once()
             self._kb_last_event_t = now
             return True
 
         return False
-
-
 
 
 
@@ -156,7 +152,6 @@ class Bot:
 
             # 정체가 충분히 이어졌고, 쿨다운도 지났으면 점프
             if (now - self._stuck_since) >= self._stuck_confirm_sec and (now - self._last_jump_t) >= self._jump_cooldown:
-                print("if (now - self._stuck_since) >= self._stuck_confirm_sec and (now - self._last_jump_t) >= self._jump_cooldown:")
                 pyautogui.press('alt')     # ← 점프!
                 self._last_jump_t = now
                 self._jump_tries += 1
@@ -283,17 +278,13 @@ class Bot:
         return hit
     
     def do_action(self,  wp=None):
-        me_x = config.player_pos_ab[0]
-
         if wp["action"] == "jump":
-            # print(f"[점프] 나의 X값: {me_x}, Target X값: {wp["x"]}")
             count = wp.get("count", 1) if wp else 1
             
             for _ in range(count):
                 pyautogui.press("alt")
                 time.sleep(0.5)  
             return True
-
 
         if wp["action"] == "ladder":
             if self.shift_down:
@@ -359,6 +350,7 @@ class Bot:
         for k in ('shift', 'left', 'right', 'up', 'down', 'z'):
             pyautogui.keyUp(k)
         self.shift_down = self.left_down = self.right_down = self.up_down = False     
+
     def _ensure_key(self, key, flag_attr, value):
         if value:  
             pyautogui.keyDown(key)
@@ -368,7 +360,6 @@ class Bot:
             setattr(self, flag_attr, False)
 
     def load_commands(self, file):
-        
         try:
             self.command_book = CommandBook(file)
             # config.gui.settings.update_class_binding()

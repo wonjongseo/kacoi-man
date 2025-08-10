@@ -6,7 +6,7 @@ import cv2
 import mss
 import numpy as np
 import pyautogui
-
+from src.common import config
 
 
 class PotionManager:
@@ -103,6 +103,9 @@ class PotionManager:
     # ──────────────────────────────────────────────
     def loop(self):
         while True:
+            if config.enabled is False:
+                time.sleep(0.001)
+                continue
             self.check()
             time.sleep(self.interval)
 
