@@ -3,7 +3,7 @@ import time
 from src.common import config,settings
 import tkinter as tk
 from tkinter import ttk
-from src.gui import View, Menu,Edit
+from src.gui import View, Menu, Edit, Settings
 
 
 class GUI:
@@ -28,6 +28,7 @@ class GUI:
 
         # self.navigation = ttk.Notebook(self.root)
         self.navigation = ttk.Notebook(self.root)
+        self.game_setting = Settings(self.navigation)
         self.view = View(self.navigation)
         self.edit = Edit(self.navigation)
         

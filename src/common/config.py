@@ -19,11 +19,11 @@ player_name_pos = None
 enabled = False
 
 
-monster_positions = []
-should_attack = False
 # Represents the current shortest path that the bot is taking
 path = []
 
+
+setting_data = None
 
 
 

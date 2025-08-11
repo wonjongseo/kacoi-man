@@ -7,5 +7,4 @@ import src.gui.edit.main as edit
 Edit = edit.Edit
 Menu = menu.Menu
 View = view.View
-
 Settings = settings.Settings
