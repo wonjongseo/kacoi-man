@@ -37,6 +37,10 @@ class Listener:
                 if self.enabled:
                     if kb.is_pressed('f9'):
                         Listener.toggle_enabled()
+                    elif kb.is_pressed('f8'):
+                        x, y = config.player_pos_ab
+                        config.gui.edit.form_panel.var_x.set(x)
+                        config.gui.edit.form_panel.var_y.set(y)
 
                     if kb.is_pressed("left"):
                        config.bot.keydown = 'left'

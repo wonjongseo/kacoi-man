@@ -10,7 +10,7 @@ class GUI:
     DISPLAY_FRAME_RATE = 30
     RESOLUTIONS = {
         'DEFAULT': '800x800',
-        'Edit': '1400x800'
+        'Edit': '1000x800'
     }
     def __init__(self):
         config.gui = self
@@ -29,7 +29,7 @@ class GUI:
         # self.navigation = ttk.Notebook(self.root)
         self.navigation = ttk.Notebook(self.root)
         self.view = View(self.navigation)
-        self.js_edit = Edit(self.navigation)
+        self.edit = Edit(self.navigation)
         
         self.navigation.pack(expand=True, fill='both')
         self.navigation.bind('<<NotebookTabChanged>>', self._resize_window)
@@ -59,7 +59,7 @@ class GUI:
         delay = 1 / GUI.DISPLAY_FRAME_RATE
         while True:
             self.view.minimap.display_minimap()
-            self.js_edit.form_panel.minimap.display_minimap()
+            self.edit.form_panel.minimap.display_minimap()
             time.sleep(delay)
         
    

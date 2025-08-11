@@ -15,11 +15,9 @@ notifier = Notifier()
 listener = Listener()
 
 
-
-
-# capture.start()
-# while not capture.ready:
-#     time.sleep(0.01)
+capture.start()
+while not capture.ready:
+    time.sleep(0.01)
     
 bot.start()
 while not bot.ready:
@@ -28,8 +26,6 @@ while not bot.ready:
 listener.start()
 while not listener.ready:
     time.sleep(0.01)
-
-
 
 notifier.start()
 while not notifier.ready:

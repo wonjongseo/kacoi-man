@@ -27,11 +27,6 @@ class ActionForm(ttk.Frame):
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
 
-        self.minimap = Minimap(self)
-        self.minimap.grid(row=11, column=0, columnspan=2, sticky="nsew", pady=(10,0))
-        self.minimap.rowconfigure(0, weight=1)
-        self.minimap.columnconfigure(0, weight=1)
-
 
         # 공통 필드
         ttk.Label(self, text="action").grid(row=0, column=0, sticky="w", pady=(0,6))
@@ -83,6 +78,12 @@ class ActionForm(ttk.Frame):
         self.btn_update.grid(row=0, column=1, sticky="ew", padx=4)
         self.btn_clear = ttk.Button(btns, text="새로 입력", command=self._clear)
         self.btn_clear.grid(row=0, column=2, sticky="ew", padx=(4,0))
+
+        self.minimap = Minimap(self)
+        self.minimap.grid(row=11, column=0, columnspan=2, sticky="nsew", pady=(10,0))
+        self.minimap.rowconfigure(0, weight=1)
+        self.minimap.columnconfigure(0, weight=1)
+
 
         self._on_action_change()  # 초기 표시
 

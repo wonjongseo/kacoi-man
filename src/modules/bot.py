@@ -1,3 +1,4 @@
+import math
 import threading
 import time
 from src.command_book.command_book import CommandBook
@@ -31,7 +32,7 @@ class Bot:
         self.thread = threading.Thread(target=self._main)
         self.thread.daemon = True
         self.found_monster = False
-        self.keydown = ''
+        self.prev_direction = ''
         self.shift_down = self.left_down = self.up_down = self.right_down = self.z_down = False
         self.route = RoutePatrol(route_ptrol)   
 
@@ -44,72 +45,72 @@ class Bot:
         self._stuck_eps_px = 1.0           # 이 픽셀 이하로만 움직이면 "안 움직임"으로 간주
         self._stuck_confirm_sec = 0.01     # 이 시간 이상 정체면 막힘 확정
         self._jump_cooldown = 0.01          # 점프 시도 간 최소 간격(스팸 방지)
-        self._last_jump_t = 0.0
+        # self._last_jump_t = 0.0
 
         self._kb_prev_x = None
-        self._kb_last_event_t = 0.0
+        # self._kb_last_event_t = 0.0
         self._kb_px = 1.0               # 이 크기 이상 반대로 튀면 '넉백'으로 간주
-        self._kb_cooldown = 0.6         # 넉백 감지 후 재트리거 쿨타임
+        
         self._kb_attack_key = 'shift'   # 넉백 시 한번 쓸 공격키('shift' 권장, 'z'로 바꿔도 됨)
         self._kb_ignore_after_jump = 0.25  # 우리가 방금 점프한 직후는 넉백으로 보지 않기
+
+        self.knockback_step = 0
+
+        self.stuck_attack_cnt = 0
+        self.prev_char_pos    = None
+
     
 
     def _tap(self, key, duration=0.06):
         pyautogui.keyDown(key); time.sleep(duration); pyautogui.keyUp(key)
 
     def _attack_once(self):
-        key = self._kb_attack_key
-        # 기본공격 z를 계속 누르고 있으니, 순간 스킬(shift) 탭을 추천.
-        # z를 계속 유지하면 스킬이 씹히는 경우가 있어서 잠깐 떼고 다시 눌러줌.
-        if self.z_down:
-            pyautogui.keyUp('z'); self.z_down = False
-            time.sleep(0.01)
-            self._tap(key, 0.05)
-            time.sleep(0.01)
-            pyautogui.keyDown('z'); self.z_down = True
-        else:
-            self._tap(key, 0.05)
+        last_direction = 'right' if self.right_down else 'left'
+        print(f'last_direction: {last_direction}')
+        
+        pyautogui.keyUp(last_direction)
+        pyautogui.keyDown('shift')
+        time.sleep(0.01)
+        pyautogui.keyUp('shift')
+        pyautogui.keyDown(last_direction)
+
+    def _new_direction(self, new_direction):
+        self._ensure_key('z',  'z_down', False)
+        self._ensure_key(new_direction,  f'{new_direction}_down', True)
+        
+        if self.prev_direction and self.prev_direction != new_direction:
+            self._ensure_key(self.prev_direction,  f'{self.prev_direction}_down', False)
+        self.prev_direction = new_direction
+        self._ensure_key('z',  'z_down', True)
+
+
 
     def _probe_knockback_and_attack(self):
         pos = config.player_pos_ab
-        if not pos:
-            self._kb_prev_x = None
-            return False
 
         x, _ = pos
-        moving_right = self.right_down and not self.left_down
-        moving_left  = self.left_down and not self.right_down
-
-        # 좌/우로 실제 이동 입력 중이 아니면 패스
-        if not (moving_right or moving_left):
-            self._kb_prev_x = x
-            return False
 
         if self._kb_prev_x is None:
             self._kb_prev_x = x
+            self.knockback_step = 0       # [NEW]
             return False
 
         dx = x - self._kb_prev_x
         self._kb_prev_x = x
-        now = time.time()
-
-        # # 방금 우리가 점프한 직후의 x변동은 무시
-        if (now - self._last_jump_t) < self._kb_ignore_after_jump:
-            return False
-        # 오른쪽 진행 중인데 x가 감소(=왼쪽으로 튐)
-        if moving_right and dx + 1 <= -self._kb_px and (now - self._kb_last_event_t) >= self._kb_cooldown:
-            print(f"[KB] knockback while RIGHT (dx={dx:.1f}) → attack once")
+        if self.right_down and dx <= -self._kb_px :
+            print(f"오른쪽 가는 중에 공격당함")
+            self.knockback_step = -1      # [NEW] 요청한 규칙
             self._attack_once()
-            self._kb_last_event_t = now
             return True
 
-        # 왼쪽 진행 중인데 x가 증가(=오른쪽으로 튐)
-        if moving_left and dx -1 >= self._kb_px and (now - self._kb_last_event_t) >= self._kb_cooldown:
-            print(f"[KB] knockback while LEFT (dx={dx:.1f}) → attack once")
+        if self.left_down and dx >= self._kb_px :
+            print(f"왼쪽 가는 중에 공격당함")
+            self.knockback_step = +1      # [NEW] 요청한 규칙
             self._attack_once()
-            self._kb_last_event_t = now
+            
             return True
 
+        self.knockback_step = 0           # [NEW]
         return False
 
 
@@ -151,7 +152,7 @@ class Bot:
                 return False
 
             # 정체가 충분히 이어졌고, 쿨다운도 지났으면 점프
-            if (now - self._stuck_since) >= self._stuck_confirm_sec and (now - self._last_jump_t) >= self._jump_cooldown:
+            if (now - self._stuck_since) >= self._stuck_confirm_sec :
                 pyautogui.press('alt')     # ← 점프!
                 self._last_jump_t = now
                 self._jump_tries += 1
@@ -186,10 +187,42 @@ class Bot:
                 self.shift_down = True
                 pyautogui.keyUp("z")
                 pyautogui.keyDown("shift")
+
+
+                여기부터
+                if self.prev_char_pos and config.player_pos_ab:
+                    if math.hypot(config.player_pos_ab[0]-self.prev_char_pos[0],
+                                config.player_pos_ab[1]-self.prev_char_pos[1]) < 3:
+                        self.stuck_attack_cnt += 1
+                    else:
+                        self.stuck_attack_cnt = 1
+                else:
+                    self.stuck_attack_cnt = 1
+                
+
+                self.prev_char_pos = config.player_pos_ab
+
+                if self.stuck_attack_cnt >= 3:
+                    print("[INFO] 같은 자리 3회 공격 → 강제 이동")
+                    self._release_all_keys()
+                    # (2) 0.4초간 오른쪽으로 대시
+                    self._ensure_key('right',  'right_down', True)
+                    pyautogui.keyDown('alt'); time.sleep(0.4)
+                    self._ensure_key('right',  'right_down', False)
+                    pyautogui.keyUp('alt')
+                    self._ensure_key('z',  'z_down', False)
+                    self.sync_waypoint_to_y()
+                    # self.reselect_waypoint()
+                    self.stuck_attack_cnt = 0
+                    # ↑ 강제 이동 결정 후 곧바로 다음 루프
+                    time.sleep(0.1)
+                    continue                    
+                time.sleep(0.1)
+                여기부터 여기까지 확인
             else:
                 self.shift_down = False
                 pyautogui.keyUp("shift")
-                pyautogui.keyDown("z")
+                # self._ensure_key('z',  'z_down', True)
             
                 wp = self.route.current_wp()
                 target_x, target_y, act = wp["x"], wp["y"], wp["action"]
@@ -216,25 +249,23 @@ class Bot:
 
 
     def move_toward(self, target_x, action):
-        """목표 x 로 이동. action='ladder' 면 1픽셀, 나머지는 5픽셀 오차로 멈춘다"""
         cur_x = config.player_pos_ab[0]
         dx = target_x - cur_x
         
-        # print(f"[MOVE] cur_x={cur_x:3}  target_x={target_x:3}  dx={dx:+3}")
         thresh = 1 if action == "ladder" else 5   # ★ 차별화
         
-        self._ensure_key('z',  'z_down', True)
-        
         if dx < -thresh:
-            self._ensure_key('left',  'left_down', True)
-            config.bot.keydown = 'left'
-            if self.right_down:
-                self._ensure_key('right',  'right_down', False)
+            self._new_direction('left')
+            # self._ensure_key('left',  'left_down', True)
+            # config.bot.keydown = 'left'
+            # if self.right_down:
+            #     self._ensure_key('right',  'right_down', False)
         elif dx > thresh:
-            self._ensure_key('right', 'right_down', True)
-            config.bot.keydown = 'right'
-            if self.left_down:
-                self._ensure_key('left',  'left_down', False)
+            self._new_direction('right')
+            # self._ensure_key('right', 'right_down', True)
+            # config.bot.keydown = 'right'
+            # if self.left_down:
+            #     self._ensure_key('left',  'left_down', False)
 
         # ── 오차 범위 안(정지) ───────────────
         else:

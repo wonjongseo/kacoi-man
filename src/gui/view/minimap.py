@@ -1,41 +1,48 @@
 
 from src.common import config
-from src.gui.interfaces import LabelFrame
+from src.gui.interfaces import LabelFrame,Frame
 import cv2
 import tkinter as tk
+from tkinter import ttk
 from src.common import config, utils
 
 from PIL import ImageTk, Image
+
 class Minimap(LabelFrame):
     def __init__(self, parent, **kwargs):
         super().__init__(parent, 'Minimap', **kwargs)
 
         self.WIDTH = 400
         self.HEIGHT = 300
-        self.canvas = tk.Canvas(self, bg='black',
+
+        topbar = Frame(self)
+        topbar.pack(fill='x', pady=2)
+
+        group = Frame(self)
+        group.pack(anchor="center")
+
+        self.coord_var = tk.StringVar(value="(x, y)")
+        self.coord_label = tk.Label(
+            group, textvariable=self.coord_var,
+            font=('Consolas', 10)
+        )
+        self.coord_label.pack(side="left",pady=(2, 0),padx= 4) 
+
+        self.btn_reload = ttk.Button(group, text="⟳", width=3, command=self.refresh)
+        self.btn_reload.pack(side="left", pady=(2, 0), padx=4) 
+
+
+        self.canvas = tk.Canvas(self,
                                 width=self.WIDTH, height=self.HEIGHT,
                                 borderwidth=0, highlightthickness=0)
         self.canvas.pack(expand=True, fill='both', padx=5, pady=5)
 
-        self.coord_var = tk.StringVar(value="(x, y)")
-        self.coord_label = tk.Label(
-            self, textvariable=self.coord_var,
-            fg='white', bg='black', font=('Consolas', 10)
-        )
-        self.coord_label.pack(pady=(2, 0))       # 캔버스 바로 아래에 배치
-
         self.container = None
         self._img = None
 
-
-    def draw_point(self, location):
-        """Draws a circle representing a Point centered at LOCATION."""
-
-        if config.capture.minimap_sample is not None:
-            minimap = cv2.cvtColor(config.capture.minimap_sample, cv2.COLOR_BGR2RGB)
-            img = self.resize_to_fit(minimap)
-            utils.draw_location(img, location, (0, 255, 0))
-            self.draw(img)
+    def refresh(self):
+        # if config.enabled:
+        config.capture.roop_screen()
         
     def draw(self, img):
         """Draws IMG onto the Canvas."""
@@ -51,6 +58,7 @@ class Minimap(LabelFrame):
         else:
             self.canvas.itemconfig(self.container, image=img)
         self._img = img 
+
     def display_minimap(self):
         """미니맵 이미지와 좌표를 업데이트한다."""
         minimap = config.capture.minimap
