@@ -6,7 +6,7 @@ import os
 import mss
 import numpy as np
 from src.common import config
-
+from tkinter import  messagebox
 
 
 def run_if_enabled(function):
@@ -134,6 +134,9 @@ def capture_minimap(x1,y1, x2,y2):
             img = np.array(sct.grab(monitor))[:, :, :3]
             cv2.imwrite("minimap_capture.png", img)
 
+
+def display_message(title, message):
+    messagebox.showinfo(title, message)
 
 
 

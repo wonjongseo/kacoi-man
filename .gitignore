@@ -3,6 +3,10 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# Python bytecode
+*.pyc
+
+
 # C extensions
 *.so
 
@@ -203,4 +207,4 @@ __marimo__/
 .streamlit/secrets.toml
 
 
-/minimap_capture.png
+assets/minimap_capture.png

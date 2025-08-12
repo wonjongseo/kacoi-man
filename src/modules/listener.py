@@ -10,8 +10,6 @@ from src.modules.bot import Bot
 from src.modules.capture import Capture
 from src.modules.notifier import Notifier
 
-
-
 class Listener: 
     def __init__(self):
         config.listener = self
@@ -53,32 +51,28 @@ class Listener:
                         notifier = Notifier()
 
                         capture.start()
-                        print("Aa")
                         while not capture.ready:
                             time.sleep(0.01)
                         bot.start()
                         while not bot.ready:
                             time.sleep(0.01)
-                       
-
                         notifier.start()
                         while not notifier.ready:
                             time.sleep(0.01)
-                        
-                    # if kb.is_pressed("left"):
-                    #    config.bot.keydown = 'left'
-                    # elif kb.is_pressed("right"):
-                    #    config.bot.keydown = 'right'
-                    # if kb.is_pressed("shift"):
-                    #     print('shift down')
-                    
             except Exception as e:
                 print(f"[Listener Error] {e}")
             time.sleep(0.01)
+
     @staticmethod    
     def toggle_enabled():
         """Resumes or pauses the current routine. Plays a sound to notify the user."""
 
+        if config.setting_data is None  :
+            utils.display_message('확인', "게임 셋팅을 적용해주세요.")
+            return
+        if  config.routine  is None:
+            utils.display_message('확인', "루틴을 적용해주세요.")
+            return
         config.enabled = not config.enabled
         if config.enabled:
             winsound.Beep(784, 333)     # G5

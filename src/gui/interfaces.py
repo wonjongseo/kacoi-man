@@ -12,6 +12,11 @@ class Frame(tk.Frame):
         self.parent = parent
 
 
+class Tab(Frame):
+    def __init__(self, parent, name, **kwargs):
+        super().__init__(parent, **kwargs)
+        parent.add(self, text=name)
+
 class LabelFrame(ttk.LabelFrame):
     def __init__(self, parent, name, **kwargs):
         kwargs['text'] = name
@@ -20,10 +25,7 @@ class LabelFrame(ttk.LabelFrame):
         self.parent = parent
 
 
-class Tab(Frame):
-    def __init__(self, parent, name, **kwargs):
-        super().__init__(parent, **kwargs)
-        parent.add(self, text=name)
+
 
 
 class MenuBarItem(tk.Menu):

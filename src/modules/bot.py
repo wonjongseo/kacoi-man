@@ -8,16 +8,16 @@ from src.common import config, utils,settings
 # from src.routine.routine import Routine
 
 class RoutePatrol:
-    
-    def __init__(self, waypoints):
-        self.waypoints = waypoints
+    def __init__(self, items):
+        self.items = items
         self.index = 0
 
     def current_wp(self):
-        return self.waypoints[self.index]
+       return self.items[self.index]
 
     def advance(self):
-        self.index = (self.index + 1) % len(self.waypoints)
+        self.index = (self.index + 1) % len(self.items)
+        config.gui.monitor.refresh_routine(current_index = self.index)
 
 
 
@@ -34,7 +34,7 @@ class Bot:
         self.found_monster = False
         self.prev_direction = ''
         self.shift_down = self.left_down = self.up_down = self.right_down = self.z_down = False
-        self.route = RoutePatrol(route_ptrol)   
+        # self.route = RoutePatrol(config.routine)   
 
         self._last_x = None
         self._stuck_since = None
@@ -191,59 +191,62 @@ class Bot:
 
 
                 #여기부터
-                if self.prev_char_pos and config.player_pos_ab:
-                    if math.hypot(config.player_pos_ab[0]-self.prev_char_pos[0],
-                                config.player_pos_ab[1]-self.prev_char_pos[1]) < 3:
-                        self.stuck_attack_cnt += 1
-                    else:
-                        self.stuck_attack_cnt = 1
-                else:
-                    self.stuck_attack_cnt = 1
+                # if self.prev_char_pos and config.player_pos_ab:
+                #     if math.hypot(config.player_pos_ab[0]-self.prev_char_pos[0],
+                #                 config.player_pos_ab[1]-self.prev_char_pos[1]) < 3:
+                #         self.stuck_attack_cnt += 1
+                #     else:
+                #         self.stuck_attack_cnt = 1
+                # else:
+                #     self.stuck_attack_cnt = 1
                 
 
-                self.prev_char_pos = config.player_pos_ab
+                # self.prev_char_pos = config.player_pos_ab
 
-                if self.stuck_attack_cnt >= 3:
-                    print("[INFO] 같은 자리 3회 공격 → 강제 이동")
-                    self._release_all_keys()
-                    # (2) 0.4초간 오른쪽으로 대시
-                    self._ensure_key('right',  'right_down', True)
-                    pyautogui.keyDown('alt'); time.sleep(0.4)
-                    self._ensure_key('right',  'right_down', False)
-                    pyautogui.keyUp('alt')
-                    self._ensure_key('z',  'z_down', False)
-                    self.sync_waypoint_to_y()
-                    # self.reselect_waypoint()
-                    self.stuck_attack_cnt = 0
-                    # ↑ 강제 이동 결정 후 곧바로 다음 루프
-                    time.sleep(0.1)
-                    continue                    
+                # if self.stuck_attack_cnt >= 3:
+                #     print("[INFO] 같은 자리 3회 공격 → 강제 이동")
+                #     self._release_all_keys()
+                #     # (2) 0.4초간 오른쪽으로 대시
+                #     self._ensure_key('right',  'right_down', True)
+                #     pyautogui.keyDown('alt'); time.sleep(0.4)
+                #     self._ensure_key('right',  'right_down', False)
+                #     pyautogui.keyUp('alt')
+                #     self._ensure_key('z',  'z_down', False)
+                #     self.sync_waypoint_to_y()
+                #     # self.reselect_waypoint()
+                #     self.stuck_attack_cnt = 0
+                #     # ↑ 강제 이동 결정 후 곧바로 다음 루프
+                #     time.sleep(0.1)
+                #     continue                    
                 time.sleep(0.1)
                 # 여기부터 여기까지 확인
             else:
                 self.shift_down = False
                 pyautogui.keyUp("shift")
                 # self._ensure_key('z',  'z_down', True)
-            
-                wp = self.route.current_wp()
-                target_x, target_y, act = wp["x"], wp["y"], wp["action"]
+                print(f'config.routine : {config.routine}')
+                
+                wp = config.routine.current_wp()
+                target_x, target_y, act = wp.x, wp.y, wp.action
                 _, cur_y = config.player_pos_ab
 
                 if target_y > cur_y + 6:          # 목표 y 가 내 y 보다 충분히 더 큼(=아래)
                     self.drop_down()
                     time.sleep(0.25)              # 낙하 안정화
                     continue                      # 다음 loop 에서 다시 판단
-
-                elif target_y + 6 < cur_y :  
+                
+                
+                elif target_y + 8 < cur_y :  
+                    print(f'target_y, cur_y : {target_y}, {cur_y}')
                     self.sync_waypoint_to_y()
 
                 if self.reached(wp):
                     self.do_action(wp)
-                    self.route.advance()
+                    config.routine.advance()
             
                 else:
                     self.move_toward(target_x, act)
-                    self._probe_knockback_and_attack()   # ← 추가
+                    # self._probe_knockback_and_attack()   # ← 추가
                     self._probe_stuck_and_jump()
                 time.sleep(0.15)
                 
@@ -280,45 +283,46 @@ class Bot:
         cx, cy = config.player_pos_ab
 
         best_i = min(
-            range(len(self.route.waypoints)),
+            range(len(config.routine.items)),
             key=lambda i: (
-                abs(self.route.waypoints[i]["y"] - cy),   # ① y 차
-                abs(self.route.waypoints[i]["x"] - cx)    # ② x 차
+                abs(config.routine.items[i].y - cy),   # ① y 차
+                abs(config.routine.items[i].x - cx)    # ② x 차
             )
         )
 
-        if best_i != self.route.index:
-            self.route.index = best_i
-            print(f"[WP] Y-sync → #{best_i}  cur_y={cy}")
+        if best_i != config.routine.index:
+            config.routine.index = best_i
+            # print(f"[WP] Y-sync → #{best_i}  cur_y={cy}")
             print(f"[INFO] WP 재동기화(Y 기준) → #{best_i} (x:{cx}, y:{cy})")
     
     def reached(self, wp):
         """웨이포인트에 도달했는지 여부를 반환"""
         cx, cy = config.player_pos_ab
-        dx = abs(cx - wp["x"])
-        dy = abs(cy - wp["y"])
+        dx = abs(cx - wp.x)
+        dy = abs(cy - wp.y)
         hit = False
-        if wp["action"] == "ladder":
+
+        if wp.action == "ladder":
             # 사다리는 x 정밀도만 중요 (+/-1px)
             tol = 1 if not (self.left_down or self.right_down) else 5
             hit=  dx <= tol
         else:
             # 나머지는 x, y 모두 여유 있게
-            hit=  dx <= 6 and dy <= 6
+            hit=  dx <= 5 and dy <= 5
         # print(f"[REACHED?] wp#{self.route.index} "
         #           f"dx={dx:.1f} dy={dy:.1f}  → {hit}")
         return hit
     
     def do_action(self,  wp=None):
-        if wp["action"] == "jump":
-            count = wp.get("count", 1) if wp else 1
+        if wp.action == "jump":
+            count = wp.count if wp else 1
             
             for _ in range(count):
                 pyautogui.press("alt")
                 time.sleep(0.5)  
             return True
 
-        if wp["action"] == "ladder":
+        if wp.action == "ladder":
             if self.shift_down:
                 self._ensure_key('shift',  'shift_down', False)
                 return
@@ -331,7 +335,7 @@ class Bot:
             self._ensure_key('up',  'up_down', True)
 
             try:
-                target_y  = wp.get("end_y") if wp else None
+                target_y  = wp.end_y if wp else None
                 start_t   = time.time()
                 max_wait  = 2.5           # ← 전역 타임아웃(초)
                 prev_cy   = None

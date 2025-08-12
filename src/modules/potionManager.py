@@ -95,10 +95,10 @@ class PotionManager:
 
         if hp_pct < self.hp_th:
             pyautogui.press('delete')
-            print(f"[POTION] HP {hp_pct*100:.0f}% → Del 사용")
+            # print(f"[POTION] HP {hp_pct*100:.0f}% → Del 사용")
         if mp_pct < self.mp_th:
             pyautogui.press('end')
-            print(f"[POTION] MP {mp_pct*100:.0f}% → End 사용")
+            # print(f"[POTION] MP {mp_pct*100:.0f}% → End 사용")
 
     # ──────────────────────────────────────────────
     def loop(self):

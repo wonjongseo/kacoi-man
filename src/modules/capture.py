@@ -17,6 +17,7 @@ import keyboard as kb
 user32 = ctypes.windll.user32
 user32.SetProcessDPIAware()
 
+
 MINIMAP_TOP_BORDER = 0 #5
 
 MINIMAP_BOTTOM_BORDER = 0 #9 
@@ -37,13 +38,12 @@ PLAYER_TEMPLATE = cv2.imread('assets/me.png', 0)
 PT_HEIGHT, PT_WIDTH = PLAYER_TEMPLATE.shape
 
 
-PLAYER_NAME_TEMPLATE = cv2.imread('assets/charactor.png', 0)
+# PLAYER_NAME_TEMPLATE = cv2.imread('assets/charactor.png', 0)
 PLAYER_HEIGHT = 70 # 실제 캐릭터 높이
 
 #
 # MONSTERS_FOLDER = 'assets/monsters/pigsBitch'
 # MONSTER_TEMPLATES = utils.load_templates(MONSTERS_FOLDER)
-
 
 
 class Capture:
@@ -102,7 +102,7 @@ class Capture:
     def start(self): 
         print('\n[~] Started video capture')
         self.thread.start()
-
+    
 
     def _main(self):
         """Constantly monitors the player's position and in-game events."""
@@ -166,7 +166,6 @@ class Capture:
         MONSTER_TEMPLATES = utils.load_templates(MONSTERS_FOLDER)
 
         with mss.mss() as self.sct:
-            print("aa")
             while True:
                 if not self.calibrated:
                     break
@@ -183,8 +182,9 @@ class Capture:
                 if player:
                     config.player_pos = utils.convert_to_relative(player[0], minimap)
                     config.player_pos_ab = (self.window['left'] + mm_tl[0] + player[0][0], self.window['top']  + mm_tl[1] + player[0][1])
-                    
                 
+                
+                PLAYER_NAME_TEMPLATE =  cv2.imread(config.setting_data.templates.character.name, 0)
                 player_name = utils.single_match(self.frame, PLAYER_NAME_TEMPLATE)
 
                 if player_name :
@@ -205,8 +205,6 @@ class Capture:
                 time.sleep(0.001)
                 
                 if config.enabled: 
-                    print(f'config.player_name_pos: {config.player_name_pos}')
-                    
                     if config.player_name_pos is None:
                         continue
 

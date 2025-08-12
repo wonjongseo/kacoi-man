@@ -16,6 +16,16 @@ def _png_or_empty(p: Optional[str]) -> str:
     return p
 
 
+
+@dataclass
+class MiscTemplates:
+    revive_message: str = ""
+
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> "MiscTemplates":
+        d = d or {}
+        return cls(revive_message=_png_or_empty(d.get("revive_message")))
+    
 @dataclass
 class AttackRange:
     front: int = 200
@@ -72,6 +82,7 @@ class CharacterTemplates:
 class Templates:
     minimap:   MinimapTemplates = field(default_factory=MinimapTemplates)
     character: CharacterTemplates = field(default_factory=CharacterTemplates)
+    misc: MiscTemplates = field(default_factory=MiscTemplates)  
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "Templates":
@@ -79,6 +90,7 @@ class Templates:
         return cls(
             minimap=MinimapTemplates.from_dict(d.get("minimap") or {}),
             character=CharacterTemplates.from_dict(d.get("character") or {}),
+            misc=MiscTemplates.from_dict(d.get("misc") or {}), 
         )
 
 
@@ -87,6 +99,8 @@ class SettingsConfig:
     monster_dir: str = ""
     hp_pct: int = 50
     mp_pct: int = 50
+    hp_key: str = ""        # ← 추가
+    mp_key: str = ""        # ← 추가
     attack_range: AttackRange = field(default_factory=AttackRange)
     templates: Templates = field(default_factory=Templates)
 
@@ -101,6 +115,8 @@ class SettingsConfig:
             monster_dir=(d.get("monster_dir") or "").strip(),
             hp_pct=_clamp_int(d.get("hp_pct"), 0, 100, 50),
             mp_pct=_clamp_int(d.get("mp_pct"), 0, 100, 50),
+            hp_key=(d.get("hp_key") or "").strip(),   # ← 추가
+            mp_key=(d.get("mp_key") or "").strip(),   # ← 추가
             attack_range=AttackRange.from_dict(d.get("attack_range") or {}),
             templates=Templates.from_dict(d.get("templates") or {}),
         )
