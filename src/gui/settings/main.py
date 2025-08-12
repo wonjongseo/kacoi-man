@@ -1,10 +1,13 @@
 
 import json
+import os
+
 from src.gui.interfaces import Tab,LabelFrame
 import tkinter as tk
 from tkinter import  ttk, filedialog, messagebox
 import src.datas.setting_data as sd
 from  src.common  import config
+
 
 
 class Settings(Tab):
@@ -143,33 +146,6 @@ class Settings(Tab):
         ttk.Button(btns, text="JSON 불러오기", command=self._load_json).grid(row=0, column=3, padx=4)
         ttk.Button(btns, text="초기화", command=self._reset).grid(row=0, column=4, padx=4)
 
-    # ========= Public API =========
-    # def get_config(self) -> dict:
-    #     return {
-    #         "monster_dir": self.var_monster_dir.get().strip(),
-    #         "hp_pct": self._clamped_pct(self.var_hp_pct.get()),
-    #         "mp_pct": self._clamped_pct(self.var_mp_pct.get()),
-    #         "attack_range": {
-    #             "front": self._clamped_px(self.var_rng_front.get()),
-    #             "back":  self._clamped_px(self.var_rng_back.get()),
-    #             "up":    self._clamped_px(self.var_rng_up.get()),
-    #             "down":  self._clamped_px(self.var_rng_down.get()),
-    #         },
-    #         "templates": {
-    #             "minimap": {
-    #                 "top_left":     self._png_or_empty(self.var_mm_tl.get()),
-    #                 "bottom_right": self._png_or_empty(self.var_mm_br.get()),
-    #                 "player":       self._png_or_empty(self.var_mm_me.get()),
-    #                 "other":        self._png_or_empty(self.var_mm_other.get()),
-    #             },
-    #             "character": {
-    #                 "hp_bar": self._png_or_empty(self.var_chr_hp.get()),
-    #                 "mp_bar": self._png_or_empty(self.var_chr_mp.get()),
-    #                 "name":   self._png_or_empty(self.var_chr_name.get()),
-    #             }
-    #         }
-    #     }
-
     def get_config(self) -> sd.SettingsConfig:
         cfg = sd.SettingsConfig(
             monster_dir=self.var_monster_dir.get().strip(),
@@ -258,19 +234,17 @@ class Settings(Tab):
 
     def _apply(self):
         cfg = self.get_config()
-        if not cfg["monster_dir"]:
+        
+        if cfg.monster_dir == "":
             messagebox.showwarning("확인", "몬스터 폴더를 선택하세요.")
             return
         
         config.setting_data = cfg
-        
-        # if callable(self.on_apply):
-        #     try:
-        #         self.on_apply(cfg)
-        #     except Exception as e:
-        #         messagebox.showerror("적용 실패", str(e))
-        #         return
         messagebox.showinfo("적용됨", "설정이 적용되었습니다.")
+
+  
+
+
 
     def _save_json(self):
         path = filedialog.asksaveasfilename(

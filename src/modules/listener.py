@@ -5,6 +5,11 @@ import winsound
 import keyboard as kb
 from src.common import config, utils
 
+import time
+from src.modules.bot import Bot
+from src.modules.capture import Capture
+from src.modules.notifier import Notifier
+
 
 
 class Listener: 
@@ -41,11 +46,29 @@ class Listener:
                         x, y = config.player_pos_ab
                         config.gui.edit.form_panel.var_x.set(x)
                         config.gui.edit.form_panel.var_y.set(y)
+                    elif kb.is_pressed('f7'):
+                        print(f'config.setting_data: {config.setting_data}')
+                        bot = Bot()
+                        capture = Capture()
+                        notifier = Notifier()
 
-                    if kb.is_pressed("left"):
-                       config.bot.keydown = 'left'
-                    elif kb.is_pressed("right"):
-                       config.bot.keydown = 'right'
+                        capture.start()
+                        print("Aa")
+                        while not capture.ready:
+                            time.sleep(0.01)
+                        bot.start()
+                        while not bot.ready:
+                            time.sleep(0.01)
+                       
+
+                        notifier.start()
+                        while not notifier.ready:
+                            time.sleep(0.01)
+                        
+                    # if kb.is_pressed("left"):
+                    #    config.bot.keydown = 'left'
+                    # elif kb.is_pressed("right"):
+                    #    config.bot.keydown = 'right'
                     # if kb.is_pressed("shift"):
                     #     print('shift down')
                     
@@ -57,7 +80,6 @@ class Listener:
         """Resumes or pauses the current routine. Plays a sound to notify the user."""
 
         config.enabled = not config.enabled
-    
         if config.enabled:
             winsound.Beep(784, 333)     # G5
         else:

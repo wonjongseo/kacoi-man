@@ -6,6 +6,7 @@ TITLE = 'MapleStory Worlds'
 #########################
 RESOURCES_DIR = 'resources'
 
+IS_TEST = True
 
 #################################
 #       Global Variables        #

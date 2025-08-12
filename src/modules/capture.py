@@ -41,8 +41,8 @@ PLAYER_NAME_TEMPLATE = cv2.imread('assets/charactor.png', 0)
 PLAYER_HEIGHT = 70 # 실제 캐릭터 높이
 
 #
-MONSTERS_FOLDER = 'assets/monsters/pigsBitch'
-MONSTER_TEMPLATES = utils.load_templates(MONSTERS_FOLDER)
+# MONSTERS_FOLDER = 'assets/monsters/pigsBitch'
+# MONSTER_TEMPLATES = utils.load_templates(MONSTERS_FOLDER)
 
 
 
@@ -161,12 +161,15 @@ class Capture:
         self.minimap_ratio = (mm_br[0] - mm_tl[0]) / (mm_br[1] - mm_tl[1]) # 계산식 이해 안된데 ?
         self.minimap_sample = self.frame[mm_tl[1]:mm_br[1], mm_tl[0]:mm_br[0]] # 계산식 이해 안된데 ?
         self.calibrated = True
-        
+
+        MONSTERS_FOLDER = config.setting_data.monster_dir
+        MONSTER_TEMPLATES = utils.load_templates(MONSTERS_FOLDER)
+
         with mss.mss() as self.sct:
+            print("aa")
             while True:
                 if not self.calibrated:
                     break
-                
                 self.frame = self.screenshot()
                 if self.frame is None:
                     continue
@@ -202,6 +205,8 @@ class Capture:
                 time.sleep(0.001)
                 
                 if config.enabled: 
+                    print(f'config.player_name_pos: {config.player_name_pos}')
+                    
                     if config.player_name_pos is None:
                         continue
 
@@ -222,7 +227,7 @@ class Capture:
                     if attack_area.size == 0:
                         continue 
                     gray_area = cv2.cvtColor(attack_area, cv2.COLOR_BGRA2GRAY)
-
+                    
                     for tpl in MONSTER_TEMPLATES:
                         h_img, w_img = gray_area.shape
                         h_tpl, w_tpl = tpl.shape

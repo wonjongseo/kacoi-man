@@ -167,6 +167,7 @@ class Bot:
             self._stuck_since = None
             self._jump_tries = 0
         return False
+    
     def start(self):
         """
         Starts this Bot object's thread.
@@ -189,7 +190,7 @@ class Bot:
                 pyautogui.keyDown("shift")
 
 
-                여기부터
+                #여기부터
                 if self.prev_char_pos and config.player_pos_ab:
                     if math.hypot(config.player_pos_ab[0]-self.prev_char_pos[0],
                                 config.player_pos_ab[1]-self.prev_char_pos[1]) < 3:
@@ -218,7 +219,7 @@ class Bot:
                     time.sleep(0.1)
                     continue                    
                 time.sleep(0.1)
-                여기부터 여기까지 확인
+                # 여기부터 여기까지 확인
             else:
                 self.shift_down = False
                 pyautogui.keyUp("shift")

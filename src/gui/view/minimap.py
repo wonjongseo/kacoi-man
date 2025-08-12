@@ -61,6 +61,10 @@ class Minimap(LabelFrame):
 
     def display_minimap(self):
         """미니맵 이미지와 좌표를 업데이트한다."""
+
+        if config.capture is None:
+            return
+        
         minimap = config.capture.minimap
         if not minimap:
             return
