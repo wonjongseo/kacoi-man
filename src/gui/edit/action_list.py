@@ -180,3 +180,10 @@ class ActionList(ttk.Frame):
         self.clipboard_append(payload)
         messagebox.showinfo("클립보드", "JSON이 클립보드에 복사되었습니다.")
 
+    def set_data(self, items):
+        """외부에서 루틴 전체를 주입"""
+        self.data = list(items or [])
+        self._refresh_tree()
+        # 다른 곳(모니터/미니맵 등)에 알리려면 이벤트 쏘기
+        self.event_generate("<<ActionListUpdated>>", when="tail")
+

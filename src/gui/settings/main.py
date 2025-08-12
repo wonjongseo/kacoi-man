@@ -350,8 +350,11 @@ class Settings(Tab):
         config.setting_data = cfg
         config.gui.monitor.refresh_routine()
         config.gui.monitor.refresh_labels()
+        self.start_bot()
+    
+    def start_bot(self):
         threading.Thread(target=self._start_modules_thread, daemon=True).start()
-        
+
     def _start_modules_thread(self):
         try:
             # 인스턴스 생성 + 전역 등록

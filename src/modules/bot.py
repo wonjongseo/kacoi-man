@@ -224,7 +224,6 @@ class Bot:
                 self.shift_down = False
                 pyautogui.keyUp("shift")
                 # self._ensure_key('z',  'z_down', True)
-                print(f'config.routine : {config.routine}')
                 
                 wp = config.routine.current_wp()
                 target_x, target_y, act = wp.x, wp.y, wp.action

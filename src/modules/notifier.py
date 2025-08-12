@@ -11,12 +11,8 @@ import keyboard as kb
 from src.routine.components import Point
 
 # Other players' symbols on the minimap
-OTHER_RANGES = (
-    ((0, 245, 215), (10, 255, 255)),
-)
+OTHER_RANGES = (((0, 245, 215), (10, 255, 255)))
 
-other_filtered = utils.filter_color(cv2.imread('assets/other.png'), OTHER_RANGES)
-OTHER_TEMPLATE = cv2.cvtColor(other_filtered, cv2.COLOR_BGR2GRAY)
 
 def get_alert_path(name):
     return os.path.join(Notifier.ALERTS_DIR, f'{name}.mp3')
@@ -47,7 +43,25 @@ class Notifier:
         self.thread.start()
     
 
-    def _main(self):
+    def _main(self):    
+        
+        selected_other = config.setting_data.templates.minimap.other
+        
+        if selected_other is None or selected_other == "":
+            other_filtered = utils.filter_color(cv2.imread('assets/other.png'), OTHER_RANGES)
+        else:
+            other_filtered = utils.filter_color(cv2.imread(selected_other), OTHER_RANGES)
+        
+        OTHER_TEMPLATE = cv2.cvtColor(other_filtered, cv2.COLOR_BGR2GRAY)
+
+        # seledted_revive_msg = config.setting_data.templates.misc.revive_message
+
+        # if seledted_revive_msg is None or seledted_revive_msg == "":
+        #     REVIVE_MSG_TEMPLATE =  cv2.imread('assets/revived_msg.png', 0)
+        # else:
+        #     REVIVE_MSG_TEMPLATE =  cv2.imread(seledted_revive_msg, 0)
+        
+
         self.ready = True
         prev_others = 0
 
@@ -68,19 +82,13 @@ class Notifier:
                     if others > prev_others:
                         self._ping('ding')
                     prev_others = others
-                    
-                # if others >= 0 :
-                #     self.cnt_found_other += 1
-                #     if self.cnt_found_other == 3:
-                #         pygame.mixer.music.play(-1)
-                #     self.other_detected = True
-                # else:
-                #     if self.cnt_found_other > 0:
-                #         self.cnt_found_other -= 1
-                #     else:
-                #         pygame.mixer.music.stop()
-                #     if self.cnt_found_other == 0:
-                #         self.other_detected = False
+
+                # is_dead = cv2.matchTemplate(frame, REVIVE_MSG_TEMPLATE, cv2.TM_CCOEFF_NORMED) 
+
+
+                # is_dead = utils.single_match(frame, REVIVE_MSG_TEMPLATE)
+                # print(f'is_dead : {is_dead}')
+                
             time.sleep(3)
 
     def _alert(self, name, volume=0.75):

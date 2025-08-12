@@ -9,11 +9,16 @@ import mss.windows
 import pygetwindow as gw
 import numpy as np
 from src.modules.potionManager import PotionManager
-from src.common import config, utils
+
+from src.common import config, utils, handle_windows
 from ctypes import wintypes
 import pyautogui
 import math
 import keyboard as kb
+
+
+
+
 user32 = ctypes.windll.user32
 user32.SetProcessDPIAware()
 
@@ -113,10 +118,13 @@ class Capture:
         mss.windows.CAPTUREBLT = 0
         while self.window_resized is False:
             windows = gw.getWindowsWithTitle(config.TITLE)
+            print(f'windows : {windows}')
+            
             if windows:
                 win = windows[0]
                 win.moveTo(0, 0)
                 win.resizeTo(970, 700)
+                handle_windows.activate_window(win.title)
                 config.TITLE = win.title
                 print(f"[INFO] '{win.title}' 창 크기 설정 완료.")
                 self.window_resized = True
