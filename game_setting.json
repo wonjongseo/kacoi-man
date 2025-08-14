@@ -5,10 +5,10 @@
   "hp_key": "del",
   "mp_key": "end",
   "attack_range": {
-    "front": 200,
-    "back": 120,
-    "up": 120,
-    "down": 80
+    "front": 220,
+    "back": 0,
+    "up": 50,
+    "down": 50
   },
   "templates": {
     "minimap": {

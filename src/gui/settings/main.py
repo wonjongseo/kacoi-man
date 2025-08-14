@@ -38,6 +38,7 @@ class Settings(Tab):
         ttk.Spinbox(frm_potion, from_=0, to=100, textvariable=self.var_hp_pct, width=6, justify="right")\
             .grid(row=0, column=1, sticky="w", pady=(8,4))
 
+        # HP key  ← 추가
         ttk.Label(frm_potion, text="HP 키").grid(row=0, column=3, sticky="e", padx=(16,4), pady=(8,4))
         ttk.Entry(frm_potion, textvariable=self.var_hp_key, width=10)\
             .grid(row=0, column=4, sticky="w", padx=(0,8), pady=(8,4))
@@ -49,6 +50,7 @@ class Settings(Tab):
             .grid(row=1, column=1, sticky="w", pady=(0,8))
 
         
+        # MP key  ← 추가
         ttk.Label(frm_potion, text="MP 키").grid(row=1, column=3, sticky="e", padx=(16,4), pady=(0,8))
         ttk.Entry(frm_potion, textvariable=self.var_mp_key, width=10)\
             .grid(row=1, column=4, sticky="w", padx=(0,8), pady=(0,8))
@@ -137,8 +139,7 @@ class Settings(Tab):
                 command=lambda: self._browse_png(self.var_misc_revive))\
             .grid(row=7, column=2, padx=(0,8))
         
-        
-
+    
     def __init__(self, parent, **kwargs):
         super().__init__(parent, "Settings" , **kwargs)
 
@@ -153,10 +154,10 @@ class Settings(Tab):
         self.var_mp_key = tk.StringVar(value="end")
 
         # 공격 사거리(px)
-        self.var_rng_front = tk.IntVar(value=200)
-        self.var_rng_back  = tk.IntVar(value=120)
-        self.var_rng_up    = tk.IntVar(value=120)
-        self.var_rng_down  = tk.IntVar(value=80)
+        self.var_rng_front = tk.IntVar(value=220)
+        self.var_rng_back  = tk.IntVar(value=0)
+        self.var_rng_up    = tk.IntVar(value=50)
+        self.var_rng_down  = tk.IntVar(value=50)
 
         # 템플레이트(이미지 경로)
         self.var_mm_tl   = tk.StringVar()  # minimap top-left
@@ -167,7 +168,6 @@ class Settings(Tab):
         self.var_chr_mp  = tk.StringVar()  # character MP bar
         self.var_chr_name= tk.StringVar()  # character name
         self.var_misc_revive = tk.StringVar()  
-
 
         # ===== Layout =====
         self.columnconfigure(0, weight=1)
@@ -195,8 +195,8 @@ class Settings(Tab):
             monster_dir=self.var_monster_dir.get().strip(),
             hp_pct=sd._clamp_int(self.var_hp_pct.get(), 0, 100, 50),
             mp_pct=sd._clamp_int(self.var_mp_pct.get(), 0, 100, 50),
-            hp_key=(self.var_hp_key.get() or "del").strip(),   
-            mp_key=(self.var_mp_key.get() or "del").strip(),   
+            hp_key=(self.var_hp_key.get() or "del").strip(),   # ← 추가
+            mp_key=(self.var_mp_key.get() or "del").strip(),   # ← 추가
             attack_range=sd.AttackRange(
                 front=sd._clamp_int(self.var_rng_front.get(), 0, 5000, 200),
                 back=sd._clamp_int(self.var_rng_back.get(), 0, 5000, 120),
@@ -215,7 +215,7 @@ class Settings(Tab):
                     mp_bar=sd._png_or_empty(self.var_chr_mp.get()),
                     name=sd._png_or_empty(self.var_chr_name.get()),
                 ),
-                misc=sd.MiscTemplates(                              
+                misc=sd.MiscTemplates(                                # ← 추가
                     revive_message=sd._png_or_empty(self.var_misc_revive.get())
                 )
             ),
@@ -248,7 +248,7 @@ class Settings(Tab):
         self.var_chr_mp.set(cfg.templates.character.mp_bar)
         self.var_chr_name.set(cfg.templates.character.name)
 
-        self.var_misc_revive.set(getattr(cfg.templates.misc, "revive_message", "")) 
+        self.var_misc_revive.set(getattr(cfg.templates.misc, "revive_message", ""))  # ← 추가
 
     def to_json_str(self) -> str:
         return json.dumps(self.get_config().to_dict(), ensure_ascii=False, indent=2)

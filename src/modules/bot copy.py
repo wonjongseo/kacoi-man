@@ -59,16 +59,18 @@ class Bot:
 
     
 
+    def _tap(self, key, duration=0.06):
+        pyautogui.keyDown(key); time.sleep(duration); pyautogui.keyUp(key)
+
     def _attack_once(self):
         last_direction = 'right' if self.right_down else 'left'
         
-        self._ensure_key(last_direction, f'{last_direction}_down', False)
-        self._ensure_key('shift', 'shift_down', True)
+        pyautogui.keyUp(last_direction)
+        pyautogui.keyDown('shift')
         time.sleep(0.01)
-        self._ensure_key('shift', 'shift_down', False)
-        self._ensure_key(last_direction, f'{last_direction}_down', True)
-
-             
+        pyautogui.keyUp('shift')
+        pyautogui.keyDown(last_direction)
+        
 
     def _new_direction(self, new_direction):
         self._ensure_key('z',  'z_down', False)
@@ -192,129 +194,74 @@ class Bot:
                 #     continue     
                 # 여기부터 여기까지 확인
                 #                
-    def _nudge_toward(self, target_x, step_ms=0.02):
-        """한 번의 짧은 탭으로 x를 미세 조정."""
-        cx = config.player_pos_ab[0]
-        if target_x < cx:           
-            self._ensure_key('left', 'left_down', True); 
-            time.sleep(step_ms);
-            self._ensure_key('left', 'left_down', False)
-        elif target_x > cx:
-            self._ensure_key('right', 'right_down', True); 
-            time.sleep(step_ms); 
-            self._ensure_key('right', 'right_down', False); 
+
 
     def _main(self):
         self.ready = True
-        
         while True:
             if config.enabled is False:
                 time.sleep(0.001)
                 continue
 
             if self.found_monster :
-                self._ensure_key('z', 'z_down', False); 
-                self._ensure_key('shift', 'shift_down', True); 
+                self.shift_down = True
+                pyautogui.keyUp("z")
+                pyautogui.keyDown("shift")
 
                 time.sleep(0.1)
             else:
-                self._ensure_key('shift', 'shift_down', False); 
+                self.shift_down = False
+                pyautogui.keyUp("shift")
                 
                 wp = config.routine.current_wp()
                 target_x, target_y, act = wp.x, wp.y, wp.action
                 _, cur_y = config.player_pos_ab
 
-                if act != "ladder" and target_y > cur_y + 6:
+                if target_y > cur_y + 6:          # 목표 y 가 내 y 보다 충분히 더 큼(=아래)
                     self.drop_down()
                     time.sleep(0.25)              # 낙하 안정화
                     continue                      # 다음 loop 에서 다시 판단
                 
-                
-                elif act != "ladder" and target_y + 6 < cur_y:
-                    print(f'target_y, cur_y : {target_y}, {cur_y}')
+                elif target_y + 8 < cur_y :  
                     self.sync_waypoint_to_y()
-# [INFO] WP 재동기화(Y 기준) → #2 (x:59, y:154)
-# target_y, cur_y : 144, 153
-                # if self.reached(wp):
-                #     self.do_action(wp)
-                #     config.routine.advance()
+
+                if self.reached(wp):
+                    self.do_action(wp)
+                    config.routine.advance()
             
                 else:
                     self.move_toward(target_x, act)
                     # self._probe_knockback_and_attack()   # ← 추가
-                    # if act == "ladder":
-                    #     # 접근/부착이 시작됐을 수 있으니 곧장 등반 루틴 진입
-                    #     self.do_action(wp)
-                    #     continue
                     self._probe_stuck_and_jump()
                 time.sleep(0.15)
                 
 
 
-    # def move_toward(self, target_x, action):
-    #     cur_x = config.player_pos_ab[0]
-    #     dx = target_x - cur_x
-        
-    #     thresh = 1 if action == "ladder" else 5   # ★ 차별화
-    #     if dx < -thresh:
-    #         self._new_direction('left')
-    #     elif dx > thresh:
-    #         self._new_direction('right')
-    #     else:
-    #         if self.left_down or self.right_down:
-    #             print("  → STOP (x 오차 허용범위)")
-    #         if self.left_down:  self._ensure_key('left',  'left_down', False)
-    #         if self.right_down: self._ensure_key('right',  'right_down', False)
     def move_toward(self, target_x, action):
         cur_x = config.player_pos_ab[0]
         dx = target_x - cur_x
-
-        if action == "ladder":
-            # 사다리용 접근 파라미터
-            PREP_WIN = 8      # 이 이하로 가까워지면 감속/탭 이동
-            SNAP_TOL = 0      # x 정렬 허용 오차
-            ATTACH_WIN = 2    # 이 이하로 가까우면 즉시 부착 시도
-
-            # 공격키 해제(밀림 방지)
-            self._ensure_key('z', 'z_down', False)
-
-            # 1) 멀면 일반 이동
-            if dx < -PREP_WIN:
-                self._new_direction('left')
-                return
-            elif dx > PREP_WIN:
-                self._new_direction('right')
-                return
-
-            # 2) 접근 구간: 감속(탭 이동)으로 미세 정렬
-            #    키다운 이동은 멈추고, 탭으로만 조정
-            if self.left_down:  self._ensure_key('left',  'left_down',  False)
-            if self.right_down: self._ensure_key('right', 'right_down', False)
-
-            # 오차가 남았으면 탭으로 살짝 보정
-            if abs(dx) > SNAP_TOL:
-                self._nudge_toward(target_x, step_ms=0.02)
-
-            # 3) 충분히 가까우면 바로 부착(Up+Jump) 실행
-            if abs(dx) <= ATTACH_WIN:
-                # Up을 먼저 누른 상태에서 점프하면 잘 붙음
-                self._ensure_key('up', 'up_down',True)            
-                pyautogui.press('alt')   # 붙기용 점프
-                # 여기서 바로 climb 루틴으로 넘기면 "다음 루프 대기"가 없어짐
-                # end_y는 do_action에서 처리하도록 호출
-                return
-            return
-
-        # ─────────────────────────────────────────
-        # 일반 이동(비-사다리)
-        thresh = 5
+        
+        thresh = 1 if action == "ladder" else 5   # ★ 차별화
+        
         if dx < -thresh:
             self._new_direction('left')
+            # self._ensure_key('left',  'left_down', True)
+            # config.bot.keydown = 'left'
+            # if self.right_down:
+            #     self._ensure_key('right',  'right_down', False)
         elif dx > thresh:
             self._new_direction('right')
+            # self._ensure_key('right', 'right_down', True)
+            # config.bot.keydown = 'right'
+            # if self.left_down:
+            #     self._ensure_key('left',  'left_down', False)
+
+        # ── 오차 범위 안(정지) ───────────────
         else:
+            if self.left_down or self.right_down:
+                print("  → STOP (x 오차 허용범위)")
             if self.left_down:  self._ensure_key('left',  'left_down', False)
-            if self.right_down: self._ensure_key('right', 'right_down', False)
+            if self.right_down: self._ensure_key('right',  'right_down', False)
 
 
     def sync_waypoint_to_y(self):
@@ -330,7 +277,8 @@ class Bot:
 
         if best_i != config.routine.index:
             config.routine.index = best_i
-            print(f"[INFO] WP 재동기화(Y 기준) → #{best_i+1} (x:{cx}, y:{cy})")
+            # print(f"[WP] Y-sync → #{best_i}  cur_y={cy}")
+            print(f"[INFO] WP 재동기화(Y 기준) → #{best_i} (x:{cx}, y:{cy})")
     
     def reached(self, wp):
         """웨이포인트에 도달했는지 여부를 반환"""
@@ -341,7 +289,7 @@ class Bot:
 
         if wp.action == "ladder":
             # 사다리는 x 정밀도만 중요 (+/-1px)
-            tol = 0  if not (self.left_down or self.right_down) else 5
+            tol = 1 if not (self.left_down or self.right_down) else 5
             hit=  dx <= tol
         else:
             # 나머지는 x, y 모두 여유 있게
@@ -358,63 +306,60 @@ class Bot:
                 pyautogui.press("alt")
                 time.sleep(0.5)  
             return True
+
         if wp.action == "ladder":
-    # 공격키/수평 이동키 정리
             if self.shift_down:
-                self._ensure_key('shift', 'shift_down', False)
-
-            self._ensure_key('left',  'left_down', False)
-            self._ensure_key('right', 'right_down', False)
-
-            # 0) x 미세 정렬(안전장치)
-            target_x = wp.x
-            while True:
-                cx, _ = config.player_pos_ab
-                if abs(cx - target_x) <= 1:
-                    break
-                self._nudge_toward(target_x, step_ms=0.02)
-                time.sleep(0.01)
-
-            # 1) 즉시 부착 시도 (Up+Jump)
-            pyautogui.press("alt")   # 붙기 점프
-            self._ensure_key('up', 'up_down', True)
+                self._ensure_key('shift',  'shift_down', False)
+                return
+            if self.left_down:  
+                self._ensure_key('left',  'left_down', True)
+            else:
+                self._ensure_key('right',  'right_down', True)
+            
+            pyautogui.press("alt")        # 사다리 붙기용 점프
+            self._ensure_key('up',  'up_down', True)
 
             try:
                 target_y  = wp.end_y if wp else None
                 start_t   = time.time()
-                max_wait  = 2.5
+                max_wait  = 2.5           # ← 전역 타임아웃(초)
                 prev_cy   = None
                 stall_t   = time.time()
 
                 while True:
                     pos = config.player_pos_ab
                     if not pos:
-                        time.sleep(0.03)
+                        time.sleep(0.05)
                         continue
 
                     _, cy = pos
 
-                    # 목표 y 도달?
-                    if target_y is not None and cy <= target_y:
+                    # ── ① 목표 y 도달 ─────────────────────────
+                    if target_y is not None and cy <= target_y :
                         return True
 
-                    # y 변화 감시(정체 체크)
+                    # ── ② y 값이 변했는가? (정체 감지) ───────
                     if prev_cy is None or abs(cy - prev_cy) > 1:
                         prev_cy = cy
-                        stall_t = time.time()
+                        stall_t = time.time()        # 움직임이 있으면 리셋
 
+                    # 0.6 s 동안 y 변화가 없으면 실패로 간주
                     if time.time() - stall_t > 0.6:
+                        # print("[WARN] 사다리 정체 → 중단")
                         return False
 
+                    # ── ③ 전역 타임아웃 ──────────────────────
                     if time.time() - start_t > max_wait:
+                        # print("[WARN] 사다리 타임아웃 → 중단")
+                        # print("    ↳ time-out while climbing")
                         return False
 
-                    time.sleep(0.03)
+                    time.sleep(0.05)
+
             finally:
                 self._ensure_key('up',  'up_down', False)
                 self._ensure_key('left',  'left_down', False)
-                self._ensure_key('right', 'right_down', False)
-      
+                self._ensure_key('right',  'right_down', False)
     def drop_down(self):
         """↓+Alt 로 아래 플랫폼으로 내려가기"""
         pyautogui.keyDown('down')
@@ -422,10 +367,10 @@ class Bot:
         time.sleep(0.12)             # 짧게 눌렀다 떼기
         pyautogui.keyUp('down')
 
-    def release_all_keys(self):
+    def _release_all_keys(self):
         for k in ('shift', 'left', 'right', 'up', 'down', 'z'):
             pyautogui.keyUp(k)
-        self.shift_down = self.left_down = self.up_down = self.right_down = self.z_down = False
+        self.shift_down = self.left_down = self.right_down = self.up_down = False     
 
     def _ensure_key(self, key, flag_attr, value):
         if value:  

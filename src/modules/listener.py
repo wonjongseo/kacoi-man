@@ -3,7 +3,7 @@ import time
 import threading
 import winsound
 import keyboard as kb
-from src.common import config, utils
+from src.common import config, utils, handle_windows
 
 import time
 from src.modules.bot import Bot
@@ -61,7 +61,9 @@ class Listener:
             return
         config.enabled = not config.enabled
         if config.enabled:
+            handle_windows.activate_window(config.TITLE)
             winsound.Beep(784, 333)     # G5
         else:
             winsound.Beep(523, 333)     # C5
+            config.bot.release_all_keys()
         time.sleep(0.267)

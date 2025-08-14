@@ -28,20 +28,25 @@ class MiscTemplates:
     
 @dataclass
 class AttackRange:
-    front: int = 200
-    back:  int = 120
-    up:    int = 120
-    down:  int = 80
+    front: int = 220
+    back:  int = 0
+    up:    int = 50
+    down:  int = 50
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "AttackRange":
         d = d or {}
         return cls(
-            front=_clamp_int(d.get("front"), 0, 5000, 200),
-            back=_clamp_int(d.get("back"),   0, 5000, 120),
-            up=_clamp_int(d.get("up"),       0, 5000, 120),
-            down=_clamp_int(d.get("down"),   0, 5000, 80),
+            front=_clamp_int(d.get("front"), 0, 5000, 220),
+            back=_clamp_int(d.get("back"),   0, 5000, 0),
+            up=_clamp_int(d.get("up"),       0, 5000, 50),
+            down=_clamp_int(d.get("down"),   0, 5000, 50),
         )
+    def __iter__(self):
+        yield self.front
+        yield self.back
+        yield self.up
+        yield self.down
 
 
 @dataclass

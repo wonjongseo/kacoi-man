@@ -52,5 +52,4 @@ class Edit(Tab):
     def _load_to_form(self, d):
         self.form_panel.set_payload(d)
 
-if __name__ == "__main__":
-    App().mainloop()
+

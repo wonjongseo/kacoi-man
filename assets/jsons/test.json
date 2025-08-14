@@ -3,10 +3,10 @@
   "hp_pct": 40,
   "mp_pct": 40,
   "attack_range": {
-  "front": 200,
-    "back": 120,
-    "up": 119,
-    "down": 80
+    "front": 220,
+    "back": 0,
+    "up": 50,
+    "down": 50
   },
   "templates": {
     "minimap": {

@@ -215,17 +215,32 @@ class Capture:
                 if config.enabled: 
                     if config.player_name_pos is None:
                         continue
-
+                    
                     px, py = config.player_name_pos  # px = X, py = Y
-
-                    # if config.bot.keydown is "left":
-                    if config.bot.left_down:
-                        x1, x2 = max(0, px - 300), px
-                    else:
-                        x1, x2 = px, min(self.frame.shape[1], px + 300)
+                           
+                    # # if config.bot.keydown is "left":
+                    # if config.bot.left_down:
+                    #     x1, x2 = max(0, px - 300), px
+                    # else:
+                    #     x1, x2 = px, min(self.frame.shape[1], px + 300)
                 
-                    y1 = max(0, py - 100)
-                    y2 = min(self.frame.shape[0], py + 100)
+                    # y1 = max(0, py - 100)
+                    # y2 = min(self.frame.shape[0], py + 100)
+                    front, back, up, down = config.setting_data.attack_range
+                    
+                    h, w = self.frame.shape[:2]  # height, width
+
+                    if config.bot.left_down:
+                        # 왼쪽 방향
+                        x1 = max(0, px - front)
+                        x2 = min(w, px + back)
+                    else:
+                        # 오른쪽 방향
+                        x1 = max(0, px - back)
+                        x2 = min(w, px + front)
+
+                    y1 = max(0, py - up)
+                    y2 = min(h, py + down)
 
                     x1, x2, y1, y2 = map(int, (x1, x2, y1, y2))
 

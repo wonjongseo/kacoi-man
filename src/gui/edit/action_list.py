@@ -45,7 +45,8 @@ class ActionList(ttk.Frame):
         # ── 하단: 삭제 / 위로 / 아래로 ──────────────────────────
         bottombar = ttk.Frame(self)
         bottombar.grid(row=2, column=0, sticky="ew", pady=(6,0))
-        bottombar.columnconfigure((0,1,2), weight=1)
+        for i in range(3):              
+            bottombar.columnconfigure(i, weight=1)
 
         self.btn_del = ttk.Button(bottombar, text="🗑 삭제", command=self._delete_selected)
         self.btn_up  = ttk.Button(bottombar, text="▲ 위로", command=lambda: self._move_selected(-1))
@@ -57,6 +58,12 @@ class ActionList(ttk.Frame):
 
         self.data: list[ActionItem] = []
         self.edit_index: int | None = None
+        # __init__ 내, self.tree 생성 직후에 추가
+        self.tree.bind("<<TreeviewSelect>>", self._on_select)
+        self.tree.bind("<Double-1>", self._on_double_click)
+
+
+
 
     def _apply(self, show_msg = True):
         if len(self.data) < 1:
@@ -117,7 +124,15 @@ class ActionList(ttk.Frame):
             return None
 
     def add_item(self, it: ActionItem):
-        self.data.append(it); self._refresh_tree()
+        self.data.append(it)
+        self._refresh_tree()
+        # 새로 추가된 마지막 행 선택
+        children = self.tree.get_children()
+        if children:
+            last = children[-1]
+            self.tree.selection_set(last)
+            self.tree.see(last)
+            self.edit_index = len(self.data) - 1
 
     def update_item(self, it: ActionItem):
         if self.edit_index is None: return
@@ -129,6 +144,7 @@ class ActionList(ttk.Frame):
         self.tree.selection_remove(self.tree.selection())
 
     def _refresh_tree(self):
+        self.tree.delete(*self.tree.get_children())
         for i, it in enumerate(self.data, start=1):
             self.tree.insert("", "end", values=(
                 i, it.action, it.x, it.y,
@@ -174,11 +190,6 @@ class ActionList(ttk.Frame):
             json.dump(list_to_jsonable(self.data), f, ensure_ascii=False, indent=2)
         messagebox.showinfo("저장 완료", f"저장됨:\n{path}")
 
-    def _copy_json(self):
-        payload = json.dumps(self.data, ensure_ascii=False, indent=2)
-        self.clipboard_clear()
-        self.clipboard_append(payload)
-        messagebox.showinfo("클립보드", "JSON이 클립보드에 복사되었습니다.")
 
     def set_data(self, items):
         """외부에서 루틴 전체를 주입"""

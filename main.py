@@ -47,7 +47,6 @@ def init_settings():
 game_setting, default_routine = init_settings()
 
 
-
 gui = GUI()
 
 if game_setting:

@@ -81,7 +81,6 @@ class Notifier:
                 
                 filtered = utils.filter_color(minimap, OTHER_RANGES)
                 others = len(utils.multi_match(filtered, OTHER_TEMPLATE, threshold=0.5))
-                print(f'others : {others}')
                 
                 if others != prev_others:
                     if others > prev_others:
