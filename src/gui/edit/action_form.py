@@ -107,21 +107,6 @@ class ActionForm(ttk.Frame):
         except ValueError:
             raise ValueError(f"'{field_name}'는 정수여야 합니다.")
 
-    # def get_payload(self):
-    #     """현재 폼 값으로 dict 생성 (액션별 필드 포함)."""
-    #     x = self._parse_int(self.var_x.get(), "x")
-    #     y = self._parse_int(self.var_y.get(), "y")
-    #     action = self.var_action.get()
-    #     payload = {"x": x, "y": y, "action": action}
-
-    #     if action == "ladder":
-    #         payload["end_y"] = self._parse_int(self.var_end_y.get(), "end_y")
-    #     elif action == "wait":
-    #         payload["duration"] = self._parse_int(self.var_duration.get(), "duration")
-    #     elif action == "jump":
-    #         payload["count"] = self._parse_int(self.var_count.get(), "count")
-
-    #     return payload
 
     def get_payload(self) -> ActionItem:
         x = self._parse_int(self.var_x.get(), "x")
@@ -138,17 +123,6 @@ class ActionForm(ttk.Frame):
         return item
 
 
-    # def set_payload(self, d: dict):
-    #     """트리에서 선택한 항목을 폼에 채우기."""
-    #     self.var_x.set(str(d.get("x","")))
-    #     self.var_y.set(str(d.get("y","")))
-    #     self.var_action.set(d.get("action","move"))
-    #     self._on_action_change()
-    #     self.var_end_y.set(str(d.get("end_y","")))
-    #     self.var_duration.set(str(d.get("duration","")))
-    #     self.var_count.set(str(d.get("count","")))
-    #     self.btn_update.config(state="normal")
-    #     self.btn_add.config(state="disabled")
     def set_payload(self, it: ActionItem):
         self.var_x.set(str(it.x))
         self.var_y.set(str(it.y))

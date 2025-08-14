@@ -26,7 +26,6 @@ class Bot:
         config.bot = self
 
         self.command_book = None            # CommandBook instance
-        # config.routine = Routine()
 
         self.ready = False
         self.thread = threading.Thread(target=self._main)
@@ -34,7 +33,6 @@ class Bot:
         self.found_monster = False
         self.prev_direction = ''
         self.shift_down = self.left_down = self.up_down = self.right_down = self.z_down = False
-        # self.route = RoutePatrol(config.routine)   
 
         self._last_x = None
         self._stuck_since = None
@@ -66,13 +64,13 @@ class Bot:
 
     def _attack_once(self):
         last_direction = 'right' if self.right_down else 'left'
-        print(f'last_direction: {last_direction}')
         
         pyautogui.keyUp(last_direction)
         pyautogui.keyDown('shift')
         time.sleep(0.01)
         pyautogui.keyUp('shift')
         pyautogui.keyDown(last_direction)
+        
 
     def _new_direction(self, new_direction):
         self._ensure_key('z',  'z_down', False)
@@ -82,7 +80,6 @@ class Bot:
             self._ensure_key(self.prev_direction,  f'{self.prev_direction}_down', False)
         self.prev_direction = new_direction
         self._ensure_key('z',  'z_down', True)
-
 
 
     def _probe_knockback_and_attack(self):
@@ -129,13 +126,6 @@ class Bot:
 
         x, _ = pos
 
-        # 좌우 키를 실제로 누르고 있을 때만 체크
-        # if not (self.left_down or self.right_down):
-        #     self._stuck_since = None
-        #     self._last_x = x
-        #     self._jump_tries = 0
-        #     return False
-
         # 첫 측정
         if self._last_x is None:
             self._last_x = x
@@ -169,28 +159,12 @@ class Bot:
         return False
     
     def start(self):
-        """
-        Starts this Bot object's thread.
-        :return:    None
-        """
-
         print('\n[~] Started main bot loop')
         self.thread.start()
 
-    def _main(self):
-        self.ready = True
-        while True:
-            if config.enabled is False:
-                time.sleep(0.001)
-                continue
-
-            if self.found_monster :
-                self.shift_down = True
-                pyautogui.keyUp("z")
-                pyautogui.keyDown("shift")
-
-
-                #여기부터
+    def aa(self):
+        print("")
+        #여기부터
                 # if self.prev_char_pos and config.player_pos_ab:
                 #     if math.hypot(config.player_pos_ab[0]-self.prev_char_pos[0],
                 #                 config.player_pos_ab[1]-self.prev_char_pos[1]) < 3:
@@ -217,13 +191,27 @@ class Bot:
                 #     self.stuck_attack_cnt = 0
                 #     # ↑ 강제 이동 결정 후 곧바로 다음 루프
                 #     time.sleep(0.1)
-                #     continue                    
-                time.sleep(0.1)
+                #     continue     
                 # 여기부터 여기까지 확인
+                #                
+
+
+    def _main(self):
+        self.ready = True
+        while True:
+            if config.enabled is False:
+                time.sleep(0.001)
+                continue
+
+            if self.found_monster :
+                self.shift_down = True
+                pyautogui.keyUp("z")
+                pyautogui.keyDown("shift")
+
+                time.sleep(0.1)
             else:
                 self.shift_down = False
                 pyautogui.keyUp("shift")
-                # self._ensure_key('z',  'z_down', True)
                 
                 wp = config.routine.current_wp()
                 target_x, target_y, act = wp.x, wp.y, wp.action
@@ -234,9 +222,7 @@ class Bot:
                     time.sleep(0.25)              # 낙하 안정화
                     continue                      # 다음 loop 에서 다시 판단
                 
-                
                 elif target_y + 8 < cur_y :  
-                    print(f'target_y, cur_y : {target_y}, {cur_y}')
                     self.sync_waypoint_to_y()
 
                 if self.reached(wp):

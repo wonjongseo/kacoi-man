@@ -44,21 +44,7 @@ class Listener:
                         x, y = config.player_pos_ab
                         config.gui.edit.form_panel.var_x.set(x)
                         config.gui.edit.form_panel.var_y.set(y)
-                    elif kb.is_pressed('f7'):
-                        print(f'config.setting_data: {config.setting_data}')
-                        bot = Bot()
-                        capture = Capture()
-                        notifier = Notifier()
-
-                        capture.start()
-                        while not capture.ready:
-                            time.sleep(0.01)
-                        bot.start()
-                        while not bot.ready:
-                            time.sleep(0.01)
-                        notifier.start()
-                        while not notifier.ready:
-                            time.sleep(0.01)
+                   
             except Exception as e:
                 print(f"[Listener Error] {e}")
             time.sleep(0.01)

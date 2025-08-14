@@ -51,7 +51,7 @@ class Notifier:
             other_filtered = utils.filter_color(cv2.imread('assets/other.png'), OTHER_RANGES)
         else:
             other_filtered = utils.filter_color(cv2.imread(selected_other), OTHER_RANGES)
-        
+        other_filtered = utils.filter_color(cv2.imread('assets/other.png'), OTHER_RANGES) # TODO FIX
         OTHER_TEMPLATE = cv2.cvtColor(other_filtered, cv2.COLOR_BGR2GRAY)
 
         # seledted_revive_msg = config.setting_data.templates.misc.revive_message
@@ -80,6 +80,7 @@ class Notifier:
                 others = len(utils.multi_match(filtered, OTHER_TEMPLATE, threshold=0.5))
                 if others != prev_others:
                     if others > prev_others:
+                        print("OTHER!")
                         self._ping('ding')
                     prev_others = others
 

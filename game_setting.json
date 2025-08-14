@@ -1,0 +1,29 @@
+{
+  "monster_dir": "C:/Users/ayane/Desktop/jongseo/kacoi-man/assets/monsters/heneshisu_higasi_hil",
+  "hp_pct": 50,
+  "mp_pct": 50,
+  "hp_key": "del",
+  "mp_key": "end",
+  "attack_range": {
+    "front": 200,
+    "back": 120,
+    "up": 120,
+    "down": 80
+  },
+  "templates": {
+    "minimap": {
+      "top_left": "C:/Users/ayane/Desktop/jongseo/kacoi-man/assets/minimap_topLeft.png",
+      "bottom_right": "C:/Users/ayane/Desktop/jongseo/kacoi-man/assets/minimap_bottomRight.png",
+      "player": "C:/Users/ayane/Desktop/jongseo/kacoi-man/assets/me.png",
+      "other": "C:/Users/ayane/Desktop/jongseo/kacoi-man/assets/other.png"
+    },
+    "character": {
+      "hp_bar": "C:/Users/ayane/Desktop/jongseo/kacoi-man/assets/hp_bar.png",
+      "mp_bar": "C:/Users/ayane/Desktop/jongseo/kacoi-man/assets/mp_bar.png",
+      "name": "C:/Users/ayane/Desktop/jongseo/kacoi-man/assets/charactor.png"
+    },
+    "misc": {
+      "revive_message": ""
+    }
+  }
+}

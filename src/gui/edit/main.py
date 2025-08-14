@@ -31,9 +31,6 @@ class Edit(Tab):
         )
         self.form_panel.grid(row=0, column=1, sticky="nsew")
 
-       
-
-
     def _apply_style(self):
         style = ttk.Style()
         # 가능한 경우 'clam' 테마 사용
