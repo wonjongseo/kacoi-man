@@ -11,8 +11,12 @@ import keyboard as kb
 from src.routine.components import Point
 
 # Other players' symbols on the minimap
-OTHER_RANGES = (((0, 245, 215), (10, 255, 255)))
+OTHER_RANGES = (
+    ((0, 245, 215), (10, 255, 255)),
+)
 
+# other_filtered = utils.filter_color(cv2.imread('assets/other.png'), OTHER_RANGES)
+# OTHER_TEMPLATE = cv2.cvtColor(other_filtered, cv2.COLOR_BGR2GRAY)
 
 def get_alert_path(name):
     return os.path.join(Notifier.ALERTS_DIR, f'{name}.mp3')
@@ -51,7 +55,6 @@ class Notifier:
             other_filtered = utils.filter_color(cv2.imread('assets/other.png'), OTHER_RANGES)
         else:
             other_filtered = utils.filter_color(cv2.imread(selected_other), OTHER_RANGES)
-        other_filtered = utils.filter_color(cv2.imread('assets/other.png'), OTHER_RANGES) # TODO FIX
         OTHER_TEMPLATE = cv2.cvtColor(other_filtered, cv2.COLOR_BGR2GRAY)
 
         # seledted_revive_msg = config.setting_data.templates.misc.revive_message
@@ -78,6 +81,8 @@ class Notifier:
                 
                 filtered = utils.filter_color(minimap, OTHER_RANGES)
                 others = len(utils.multi_match(filtered, OTHER_TEMPLATE, threshold=0.5))
+                print(f'others : {others}')
+                
                 if others != prev_others:
                     if others > prev_others:
                         print("OTHER!")
@@ -110,6 +115,7 @@ class Notifier:
         config.listener.enabled = True
 
     def _ping(self, name, volume=0.5):
+        print("ping")
         """A quick notification for non-dangerous events."""
 
         self.mixer.load(get_alert_path(name))
