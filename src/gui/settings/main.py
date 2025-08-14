@@ -140,6 +140,20 @@ class Settings(Tab):
             .grid(row=7, column=2, padx=(0,8))
         
     
+    def _create_buff_feild(self, row_index) :
+        # ── 버프 ── (포션 사용 임계치 바로 아래)
+        frm_buff = ttk.LabelFrame(self, text="버프")
+        frm_buff.grid(row=row_index, column=0, sticky="ew", padx=4, pady=(0,10))
+        frm_buff.columnconfigure(1, weight=1)
+
+        ttk.Label(frm_buff, text="버프 쿨타임(초)").grid(row=0, column=0, sticky="w", padx=8, pady=(8,4))
+        ttk.Spinbox(frm_buff, from_=0, to=36000, textvariable=self.var_buff_cooldown,
+                    width=8, justify="right").grid(row=0, column=1, sticky="w", pady=(8,4))
+
+        ttk.Label(frm_buff, text="버프 사용 키").grid(row=1, column=0, sticky="w", padx=8, pady=(0,8))
+        ttk.Entry(frm_buff, textvariable=self.var_buff_key)\
+            .grid(row=1, column=1, sticky="ew", pady=(0,8))
+
     def __init__(self, parent, **kwargs):
         super().__init__(parent, "Settings" , **kwargs)
 
@@ -169,6 +183,11 @@ class Settings(Tab):
         self.var_chr_name= tk.StringVar()  # character name
         self.var_misc_revive = tk.StringVar()  
 
+        self.var_buff_cooldown = tk.IntVar(value=0)   # 초 단위
+        self.var_buff_key = tk.StringVar(value="")    # 예: F1, Q, shift+a
+
+
+
         # ===== Layout =====
         self.columnconfigure(0, weight=1)
 
@@ -180,10 +199,11 @@ class Settings(Tab):
 
         self._create_potion_feild(3)
         
+        self._create_buff_feild(4)
 
         # 하단 버튼
         btns = ttk.Frame(self)
-        btns.grid(row=4, column=0, sticky="ew", pady=(4,0))
+        btns.grid(row=5, column=0, sticky="ew", pady=(4,0))
         btns.columnconfigure(0, weight=1)
         ttk.Button(btns, text="✅ 적용", command=self._apply).grid(row=0, column=1, padx=4)
         ttk.Button(btns, text="💾 저장", command=self._save_json).grid(row=0, column=2, padx=4)
@@ -219,6 +239,10 @@ class Settings(Tab):
                     revive_message=sd._png_or_empty(self.var_misc_revive.get())
                 )
             ),
+            buffs=sd.BuffSettings(
+                cooldown_sec=sd._clamp_int(self.var_buff_cooldown.get(), 0, 36000, 0),
+                key=self.var_buff_key.get().strip(),
+            ),
             
         )
         return cfg
@@ -249,6 +273,9 @@ class Settings(Tab):
         self.var_chr_name.set(cfg.templates.character.name)
 
         self.var_misc_revive.set(getattr(cfg.templates.misc, "revive_message", ""))  # ← 추가
+
+        self.var_buff_cooldown.set(cfg.buffs.cooldown_sec)
+        self.var_buff_key.set(cfg.buffs.key)
 
     def to_json_str(self) -> str:
         return json.dumps(self.get_config().to_dict(), ensure_ascii=False, indent=2)
@@ -285,7 +312,6 @@ class Settings(Tab):
         return max(0, min(5000, v))
 
     
-
     def _save_json(self):
         path = filedialog.asksaveasfilename(
             title="설정을 JSON으로 저장",
@@ -329,9 +355,13 @@ class Settings(Tab):
         self.var_rng_down.set(80)
         self.var_misc_revive.set("")
 
+        self.var_buff_cooldown.set(0)
+        self.var_buff_key.set("")
+        
         for v in (self.var_mm_tl, self.var_mm_br, self.var_mm_me, self.var_mm_other,
                   self.var_chr_hp, self.var_chr_mp, self.var_chr_name):
             v.set("")
+
 
     
     def _apply(self, show_msg = True):

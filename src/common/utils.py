@@ -188,15 +188,18 @@ def center_from_bounds(top_left, bottom_right):
     return cx, cy
 
 def load_templates(folder):
-    temps = []
-    for f in os.listdir(folder):
-        img = cv2.imread(os.path.join(folder, f), 0)
-        if img is None:
-            continue
-        temps.append(img)
-        temps.append(cv2.flip(img, 1))
-    
-    return temps
+    try:
+        temps = []
+        for f in os.listdir(folder):
+            img = cv2.imread(os.path.join(folder, f), 0)
+            if img is None:
+                continue
+            temps.append(img)
+            temps.append(cv2.flip(img, 1))
+        
+        return temps
+    except:
+        display_message('경고', f'{folder}\n는 잘못된 폴더 경로입니다.')
 
 
 

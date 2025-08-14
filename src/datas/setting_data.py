@@ -48,6 +48,18 @@ class AttackRange:
         yield self.up
         yield self.down
 
+@dataclass
+class BuffSettings:
+    cooldown_sec: int = 0   # 버프 쿨타임(초)
+    key: str = ""           # 버프 사용 키 (예: 'F1', 'Q', 'shift+a')
+
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> "BuffSettings":
+        d = d or {}
+        return cls(
+            cooldown_sec=_clamp_int(d.get("cooldown_sec", 0), 0, 36000, 0),
+            key=str(d.get("key", "")).strip()
+        )
 
 @dataclass
 class MinimapTemplates:
@@ -108,7 +120,7 @@ class SettingsConfig:
     mp_key: str = ""        # ← 추가
     attack_range: AttackRange = field(default_factory=AttackRange)
     templates: Templates = field(default_factory=Templates)
-
+    buffs: BuffSettings = field(default_factory=BuffSettings)
     # ---- 직렬화 / 역직렬화 ----
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -124,4 +136,5 @@ class SettingsConfig:
             mp_key=(d.get("mp_key") or "").strip(),   # ← 추가
             attack_range=AttackRange.from_dict(d.get("attack_range") or {}),
             templates=Templates.from_dict(d.get("templates") or {}),
+            buffs=BuffSettings.from_dict(d.get("buffs") or {}),  
         )

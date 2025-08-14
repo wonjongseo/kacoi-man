@@ -90,7 +90,7 @@ route_ptrol2 = [
 #     # {"x": 96, "y": 81, "action":"move"},
 # ]
 
-# 57, 159
+
 
 # route_ptrol2 = [
 #     {"x": 57, "y":140, "action":"move"},

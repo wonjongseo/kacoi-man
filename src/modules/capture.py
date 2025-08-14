@@ -213,34 +213,24 @@ class Capture:
                 time.sleep(0.001)
                 
                 if config.enabled: 
-                    if config.player_name_pos is None:
+                    if config.player_name_pos is None : # or config.bot.can_attack != True:
                         continue
                     
                     px, py = config.player_name_pos  # px = X, py = Y
                            
-                    # # if config.bot.keydown is "left":
-                    # if config.bot.left_down:
-                    #     x1, x2 = max(0, px - 300), px
-                    # else:
-                    #     x1, x2 = px, min(self.frame.shape[1], px + 300)
-                
-                    # y1 = max(0, py - 100)
-                    # y2 = min(self.frame.shape[0], py + 100)
                     front, back, up, down = config.setting_data.attack_range
                     
-                    h, w = self.frame.shape[:2]  # height, width
-
-                    if config.bot.left_down:
-                        # 왼쪽 방향
-                        x1 = max(0, px - front)
-                        x2 = min(w, px + back)
+                    if config.bot.left_down and config.bot.right_down == False:
+                        x1, x2 = max(0, px - front), px + back
                     else:
-                        # 오른쪽 방향
-                        x1 = max(0, px - back)
-                        x2 = min(w, px + front)
-
+                        x1, x2 = px - back, min(self.frame.shape[1], px + front)
+                    # elif config.bot.right_down and config.bot.left_down == False:
+                        # x1, x2 = px - back, min(self.frame.shape[1], px + front)
+                    # else:
+                    #     config.bot.found_monster = False
+                    #     continue
                     y1 = max(0, py - up)
-                    y2 = min(h, py + down)
+                    y2 = min(self.frame.shape[0], py + down)
 
                     x1, x2, y1, y2 = map(int, (x1, x2, y1, y2))
 
