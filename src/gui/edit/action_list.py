@@ -18,12 +18,12 @@ class ActionList(ttk.Frame):
          # Topbar
         topbar = ttk.Frame(self)
         topbar.grid(row=0, column=0, sticky="ew")
+        self.btn_apply = ttk.Button(topbar, text="✅ 적용",     command=self._apply)
         self.btn_save  = ttk.Button(topbar, text="💾 저장",     command=self._save_json)
         self.btn_load  = ttk.Button(topbar, text="📂 불러오기", command=self._load_json)
-        self.btn_apply = ttk.Button(topbar, text="✅ 적용",     command=self._apply)
-        self.btn_save.grid(row=0, column=0, padx=(0,6), pady=(0,6))
-        self.btn_load.grid(row=0, column=1, padx=6,      pady=(0,6))
-        self.btn_apply.grid(row=0, column=2, padx=(6,0),  pady=(0,6))
+        self.btn_apply.grid(row=0, column=0, padx=(0,6), pady=(0,6))
+        self.btn_save.grid(row=0, column=1, padx=6,      pady=(0,6))
+        self.btn_load.grid(row=0, column=2, padx=(6,0),  pady=(0,6))
 
         # List 영역 (grid) — 래퍼 프레임 사용
         listwrap = ttk.Frame(self)

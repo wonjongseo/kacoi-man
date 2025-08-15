@@ -1,5 +1,5 @@
 from dataclasses import dataclass, asdict, field
-from typing import Dict, Any, Optional
+from typing import Dict, Any, List, Optional
 
 
 def _clamp_int(v: Any, lo: int, hi: int, default: int = 0) -> int:
@@ -120,7 +120,7 @@ class SettingsConfig:
     mp_key: str = ""        # ← 추가
     attack_range: AttackRange = field(default_factory=AttackRange)
     templates: Templates = field(default_factory=Templates)
-    buffs: BuffSettings = field(default_factory=BuffSettings)
+    buffs: List[BuffSettings] = field(default_factory=list)
     # ---- 직렬화 / 역직렬화 ----
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -136,5 +136,5 @@ class SettingsConfig:
             mp_key=(d.get("mp_key") or "").strip(),   # ← 추가
             attack_range=AttackRange.from_dict(d.get("attack_range") or {}),
             templates=Templates.from_dict(d.get("templates") or {}),
-            buffs=BuffSettings.from_dict(d.get("buffs") or {}),  
+            buffs=[BuffSettings.from_dict(x) for x in (d.get("buffs") or [])],  # ← 파싱
         )

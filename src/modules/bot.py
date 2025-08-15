@@ -53,7 +53,7 @@ class Bot:
 
         self.stuck_attack_cnt = 0
         self.prev_char_pos    = None
-
+        self.prev_action = ''
         self.can_attack = True
     
     def _refresh_can_attack(self, act, dx_abs):
@@ -229,26 +229,44 @@ class Bot:
                 cur_x, cur_y = config.player_pos_ab
 
                 dx = target_x - cur_x
+                dy = target_y - cur_y
                 dx_abs = abs(dx)
+                dy_abs = abs(dy)
 
                 # 공격 가능 여부는 "거리"로 결정
                 self._refresh_can_attack(act, dx_abs)
 
-                if  target_y > cur_y + 6:
+                if  target_y > cur_y + 6 and  cur_y - target_y > -30  :
+                    print("?")
                     self.drop_down()
                     time.sleep(0.25)              # 낙하 안정화
                     continue                      # 다음 loop 에서 다시 판단
                 
                 elif target_y + 6 < cur_y:
+                    print("??")
                     if act != "ladder":
+                        print("???")
                         self.sync_waypoint_to_y()
                     else:
-                        # X가 충분히 멀다(=사다리 접근도 못하는 위치) + Up 미홀드(등반중 아님) → 재동기화 허용
-                        if (not self.up_down) and dx_abs > 12:   # 16은 맵에 맞춰 조정 가능(PREP_WIN*2 정도)
+                        # X가 충분히 멀다(=사다리 접근도 못하는 위치) + Up 미홀드(등반중 아님) → 재동기화 허용 
+                        if (not self.up_down) and (dx_abs > 12 or dy_abs > 6):   # 16은 맵에 맞춰 조정 가능(PREP_WIN*2 정도)
+                            print("????")
                             self.sync_waypoint_to_y()
                 
                 if self.reached(wp):
                     if self.do_action(wp):
+                        self.prev_action = wp.action
+                        print(f'self.prev_action : {self.prev_action}')
+                        
+                        # if self.prev_action == 'ladder':
+                        #     if self.left_down == False and self.right_down == False and self.prev_direction != '':
+                        #         print(f'self.prev_direction : {self.prev_direction}')
+                        #         if self.prev_direction =='right':
+                        #             self._ensure_key('left','left_down', False)
+                        #             self._ensure_key('right','right_down', True)
+                        #         else:
+                        #             self._ensure_key('left','left_down', True)
+                        #             self._ensure_key('right','right_down', False)
                         config.routine.advance()
                 else:
                     self.move_toward(target_x, act)
@@ -260,6 +278,7 @@ class Bot:
                 
 
     def move_toward(self, target_x, action):
+
         cur_x = config.player_pos_ab[0]
         dx = target_x - cur_x
 
@@ -312,23 +331,25 @@ class Bot:
         # ───────── 일반 이동(비-사다리) 튐 방지 ─────────
     # 히스테리시스/근접탭 파라미터
         STOP_TOL      = 2   # 이내면 완전히 정지
-        PREC_TAP_WIN  = 10  # 이내면 keydown 대신 탭으로 미세조정
+        PREC_TAP_WIN  = 8  # 이내면 keydown 대신 탭으로 미세조정
         GO_TOL        = 6   # 이보다 멀면 방향키를 눌러 이동(큰 이동)
 
         dx_abs = abs(dx)
 
         # 1) 목표 근처: 완전 정지
-        if dx_abs <= STOP_TOL:
-            if self.left_down:  self._ensure_key('left',  'left_down', False)
-            if self.right_down: self._ensure_key('right', 'right_down', False)
-            return
 
-        # 2) 근접 구간: keydown 금지하고 탭으로만 접근(과주 방지)
-        if dx_abs <= PREC_TAP_WIN:
-            if self.left_down:  self._ensure_key('left',  'left_down', False)
-            if self.right_down: self._ensure_key('right', 'right_down', False)
-            self._nudge_toward(target_x, step_ms=0.018)  # 살짝 더 짧게
-            return
+        if action == "ladder":
+            if dx_abs <= STOP_TOL:
+                if self.left_down:  self._ensure_key('left',  'left_down', False)
+                if self.right_down: self._ensure_key('right', 'right_down', False)
+                return
+
+            # 2) 근접 구간: keydown 금지하고 탭으로만 접근(과주 방지)
+            if dx_abs <= PREC_TAP_WIN:
+                if self.left_down:  self._ensure_key('left',  'left_down', False)
+                if self.right_down: self._ensure_key('right', 'right_down', False)
+                self._nudge_toward(target_x, step_ms=0.018)  # 살짝 더 짧게
+                return
 
         # 3) 멀리 있을 때: 방향키를 확실히 눌러 이동
         if dx < -GO_TOL:
@@ -351,7 +372,9 @@ class Bot:
                 abs(config.routine.items[i].x - cx)    # ② x 차
             )
         )
-
+        print(f'best_i : {best_i}')
+        print(f'config.routine.index : {config.routine.index}')
+        
         if best_i != config.routine.index:
             config.routine.index = best_i
             print(f"[INFO] WP 재동기화(Y 기준) → #{best_i+1} (x:{cx}, y:{cy})")
@@ -366,7 +389,6 @@ class Bot:
         if wp.action == "ladder":
             # 사다리는 x 정밀도만 중요 (+/-1px)
             tol = 0  if not (self.left_down or self.right_down) else 5
-            print(f'tol : {tol}')
             
             hit=  dx <= tol
         else:
@@ -412,7 +434,7 @@ class Bot:
             try:
                 target_y  = wp.end_y if wp else None
                 start_t   = time.time()
-                max_wait  = 2.5
+                max_wait  = 6
                 prev_cy   = None
                 stall_t   = time.time()
 
@@ -443,10 +465,24 @@ class Bot:
                     time.sleep(0.03)
             finally:
                 self._ensure_key('up',  'up_down', False)
-                self._ensure_key('left','left_down', False)
-                self._ensure_key('right','right_down', False)
+                # self._ensure_key('left',  'left_down', False)
+                # self._ensure_key('right', 'right_down', False)
                 self.is_climbing = False
                 self._no_attack_until = time.time() + 0.25
+
+                time.sleep(0.25)
+                if self.left_down == False and self.right_down == False and self.prev_direction != '':
+                        print(f'self.prev_direction : {self.prev_direction}')
+                        if self.prev_direction =='right':
+                            self.right_down = True
+                            pyautogui.press('right') 
+                            # self._ensure_key('left','left_down', False)
+                            # self._ensure_key('right','right_down', True)
+                        else:
+                            self.left_down = True
+                            pyautogui.press('left') 
+                            # self._ensure_key('left','left_down', True)
+                            # self._ensure_key('right','right_down', False)
             return success
 
         return True

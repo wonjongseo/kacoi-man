@@ -46,3 +46,25 @@ listener = None
 
 # Shares the gui to all modules
 gui = None
+
+
+# src/common/cleanup.py
+from src.common import config
+
+def stop_all_modules():
+    # 순서 중요할 때(예: listener → bot → capture → notifier) 조정 가능
+    for name in ("listener", "bot", "capture", "notifier"):
+        mod = getattr(config, name, None)
+        if mod is None:
+            continue
+        try:
+            if hasattr(mod, "stop"):
+                mod.stop()
+        except Exception as e:
+            print(f"[WARN] stop failed for {name}: {e}")
+        finally:
+            setattr(config, name, None)
+
+    # 실행 상태 플래그도 초기화
+    config.enabled = False
+

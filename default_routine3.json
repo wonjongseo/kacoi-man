@@ -1,0 +1,40 @@
+[
+  {
+    "action": "ladder",
+    "x": 33,
+    "y": 110,
+    "end_y": 72
+  },
+  {
+    "action": "move",
+    "x": 61,
+    "y": 71
+  },
+  {
+    "action": "move",
+    "x": 97,
+    "y": 109
+  },
+  {
+    "action": "move",
+    "x": 108,
+    "y": 112
+  },
+  {
+    "action": "move",
+    "x": 132,
+    "y": 149
+  },
+  {
+    "action": "ladder",
+    "x": 40,
+    "y": 145,
+    "end_y": 126
+  },
+  {
+    "action": "ladder",
+    "x": 36,
+    "y": 126,
+    "end_y": 110
+  }
+]
