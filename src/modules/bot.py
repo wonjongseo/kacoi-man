@@ -257,16 +257,6 @@ class Bot:
                     if self.do_action(wp):
                         self.prev_action = wp.action
                         print(f'self.prev_action : {self.prev_action}')
-                        
-                        # if self.prev_action == 'ladder':
-                        #     if self.left_down == False and self.right_down == False and self.prev_direction != '':
-                        #         print(f'self.prev_direction : {self.prev_direction}')
-                        #         if self.prev_direction =='right':
-                        #             self._ensure_key('left','left_down', False)
-                        #             self._ensure_key('right','right_down', True)
-                        #         else:
-                        #             self._ensure_key('left','left_down', True)
-                        #             self._ensure_key('right','right_down', False)
                         config.routine.advance()
                 else:
                     self.move_toward(target_x, act)
@@ -392,10 +382,7 @@ class Bot:
             
             hit=  dx <= tol
         else:
-            # 나머지는 x, y 모두 여유 있게
             hit=  dx <= 5 and dy <= 5
-        # print(f"[REACHED?] wp#{self.route.index} "
-        #           f"dx={dx:.1f} dy={dy:.1f}  → {hit}")
         return hit
     
     def do_action(self,  wp=None):
@@ -406,8 +393,8 @@ class Bot:
                 pyautogui.press("alt")
                 time.sleep(0.5)  
             return True
+        
         if wp.action == "ladder":
-    # 공격키/수평 이동키 정리
             if self.shift_down:
                 self._ensure_key('shift', 'shift_down', False)
 
@@ -428,7 +415,6 @@ class Bot:
             pyautogui.press("alt")   # 붙기 점프
             self._ensure_key('up', 'up_down', True)
             time.sleep(0.02)
-            pyautogui.press("alt")
             self.is_climbing = True
             self._no_attack_until = time.time() + 0.30
             try:
@@ -440,11 +426,15 @@ class Bot:
 
                 while True:
                     pos = config.player_pos_ab
+                    print(f'pos : {pos}')
+                    
                     if not pos:
                         time.sleep(0.03)
                         continue
 
                     _, cy = pos
+                    print(f'cy : {cy}')
+                    
 
                     # 목표 y 도달?
                     if target_y is not None and cy <= target_y:
@@ -459,14 +449,12 @@ class Bot:
                     if time.time() - stall_t > 0.6:
                         return False
 
-                    if time.time() - start_t > max_wait:
-                        return False
+                    # if time.time() - start_t > max_wait:
+                    #     return False
 
                     time.sleep(0.03)
             finally:
                 self._ensure_key('up',  'up_down', False)
-                # self._ensure_key('left',  'left_down', False)
-                # self._ensure_key('right', 'right_down', False)
                 self.is_climbing = False
                 self._no_attack_until = time.time() + 0.25
 
@@ -476,13 +464,9 @@ class Bot:
                         if self.prev_direction =='right':
                             self.right_down = True
                             pyautogui.press('right') 
-                            # self._ensure_key('left','left_down', False)
-                            # self._ensure_key('right','right_down', True)
                         else:
                             self.left_down = True
                             pyautogui.press('left') 
-                            # self._ensure_key('left','left_down', True)
-                            # self._ensure_key('right','right_down', False)
             return success
 
         return True
