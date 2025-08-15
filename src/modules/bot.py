@@ -322,7 +322,11 @@ class Bot:
     # 히스테리시스/근접탭 파라미터
         STOP_TOL      = 2   # 이내면 완전히 정지
         PREC_TAP_WIN  = 8  # 이내면 keydown 대신 탭으로 미세조정
-        GO_TOL        = 6   # 이보다 멀면 방향키를 눌러 이동(큰 이동)
+
+        if action == "jump" :
+            GO_TOL = 2
+        else:
+            GO_TOL        = 6   # 이보다 멀면 방향키를 눌러 이동(큰 이동)
 
         dx_abs = abs(dx)
 
@@ -347,9 +351,17 @@ class Bot:
         elif dx > GO_TOL:
             self._new_direction('right')
         else:
+            if self.prev_direction == 'right':
+                self._ensure_key('left',  'left_down', True)
+                time.sleep(utils.rand_float(0.1,0.3))
+                self._ensure_key('left',  'left_down', False)
+            else:
+                self._ensure_key('right',  'right_down', True)
+                time.sleep(utils.rand_float(0.1,0.3))
+                self._ensure_key('right',  'right_down', False)
             # dead-zone: 불필요한 방향 전환 방지
-            if self.left_down:  self._ensure_key('left',  'left_down', False)
-            if self.right_down: self._ensure_key('right', 'right_down', False)
+            # if self.left_down:  self._ensure_key('left',  'left_down', False)
+            # if self.right_down: self._ensure_key('right', 'right_down', False)
 
 
     def sync_waypoint_to_y(self):
@@ -382,7 +394,14 @@ class Bot:
             
             hit=  dx <= tol
         else:
-            hit=  dx <= 5 and dy <= 5
+            if self.prev_action == 'ladder' :
+                print(f'cx, wp.x: {cx} {wp.x}')
+                print(f'dx : {dx}')
+                hit = dx <= 2
+            else:
+                hit=  dx <= 5 and dy <= 5
+        print(f'hit : {hit}')
+        
         return hit
     
     def do_action(self,  wp=None):
@@ -426,15 +445,12 @@ class Bot:
 
                 while True:
                     pos = config.player_pos_ab
-                    print(f'pos : {pos}')
                     
                     if not pos:
                         time.sleep(0.03)
                         continue
 
                     _, cy = pos
-                    print(f'cy : {cy}')
-                    
 
                     # 목표 y 도달?
                     if target_y is not None and cy <= target_y:
@@ -454,6 +470,7 @@ class Bot:
 
                     time.sleep(0.03)
             finally:
+                time.sleep(0.35)
                 self._ensure_key('up',  'up_down', False)
                 self.is_climbing = False
                 self._no_attack_until = time.time() + 0.25

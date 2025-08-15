@@ -7,7 +7,7 @@ import mss
 import numpy as np
 from src.common import config
 from tkinter import  messagebox
-
+from random import random
 
 def run_if_enabled(function):
     """
@@ -203,3 +203,18 @@ def load_templates(folder):
 
 
 
+def bernoulli(p):
+    """
+    Returns the value of a Bernoulli random variable with probability P.
+    :param p:   The random variable's probability of being True.
+    :return:    True or False.
+    """
+
+    return random() < p
+
+
+def rand_float(start, end):
+    """Returns a random float value in the interval [START, END)."""
+
+    assert start < end, 'START must be less than END'
+    return (end - start) * random() + start

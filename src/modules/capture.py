@@ -224,11 +224,7 @@ class Capture:
                         x1, x2 = max(0, px - front), px + back
                     else:
                         x1, x2 = px - back, min(self.frame.shape[1], px + front)
-                    # elif config.bot.right_down and config.bot.left_down == False:
-                        # x1, x2 = px - back, min(self.frame.shape[1], px + front)
-                    # else:
-                    #     config.bot.found_monster = False
-                    #     continue
+                    
                     y1 = max(0, py - up)
                     y2 = min(self.frame.shape[0], py + down)
 

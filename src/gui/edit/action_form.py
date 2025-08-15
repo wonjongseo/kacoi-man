@@ -22,6 +22,7 @@ class ActionForm(ttk.Frame):
         self.var_end_y = tk.StringVar()     # ladder 전용
         self.var_duration = tk.StringVar()  # wait 전용
         self.var_count = tk.StringVar()     # jump 전용
+        self.var_in_place = tk.BooleanVar(value=False)
 
         # Grid
         self.rowconfigure(11, weight=1)              # 미니맵 영역이 세로로 늘어나도록
@@ -67,6 +68,9 @@ class ActionForm(ttk.Frame):
         ttk.Label(self.row_jump, text="count").grid(row=0, column=0, sticky="w")
         self.ent_count = ttk.Entry(self.row_jump, textvariable=self.var_count)
         self.ent_count.grid(row=0, column=1, sticky="ew", pady=2)
+
+        self.chk_in_place = ttk.Checkbutton(self.row_jump, text="제자리 점프", variable=self.var_in_place)
+        self.chk_in_place.grid(row=0, column=2, sticky="w", padx=(8,0))
         self.row_jump.columnconfigure(1, weight=1)
 
         # 버튼들
@@ -118,6 +122,7 @@ class ActionForm(ttk.Frame):
             end_y=int(self.var_end_y.get()) if action=="ladder" and self.var_end_y.get()!="" else None,
             duration=int(self.var_duration.get()) if action=="wait" and self.var_duration.get()!="" else None,
             count=int(self.var_count.get()) if action=="jump" and self.var_count.get()!="" else None,
+            in_place =bool(self.var_in_place.get()) if action == "jump" else None
         )
         item.validate()
         return item
@@ -131,6 +136,7 @@ class ActionForm(ttk.Frame):
         self.var_end_y.set("" if it.end_y is None else str(it.end_y))
         self.var_duration.set("" if it.duration is None else str(it.duration))
         self.var_count.set("" if it.count is None else str(it.count))
+        self.var_in_place.set(bool(getattr(it, "in_place", False)))
         self.btn_update.config(state="normal")
         self.btn_add.config(state="disabled")
 
@@ -150,7 +156,8 @@ class ActionForm(ttk.Frame):
 
     def _clear_fields_only(self):
         self.var_x.set(""); self.var_y.set("")
-        self.var_end_y.set(""); self.var_duration.set(""); self.var_count.set("")
+        self.var_end_y.set(""); self.var_duration.set("")
+        self.var_count.set(""); self.var_in_place.set(False)
 
     def _clear(self):
         self._clear_fields_only()

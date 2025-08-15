@@ -13,6 +13,7 @@ class ActionItem:
     end_y: Optional[int] = None     # ladder 전용
     duration: Optional[int] = None  # wait 전용
     count: Optional[int] = None     # jump 전용
+    in_place : Optional[bool] = None
 
     # ── 유효성 검사 ───────────────────────────────────────────────
     def validate(self) -> None:
@@ -49,6 +50,7 @@ class ActionItem:
             end_y=d.get("end_y"),
             duration=d.get("duration"),
             count=d.get("count"),
+            in_place=d.get("in_place"),
         )
         item.validate()
         return item

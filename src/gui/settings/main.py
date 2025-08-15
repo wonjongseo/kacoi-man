@@ -75,7 +75,7 @@ class Settings(Tab):
         # 공격 사거리(px)
         frm_range = ttk.LabelFrame(self, text="공격 사거리 (px)")
         frm_range.grid(row=row_index, column=0, sticky="ew", padx=4)
-        for c in (1,3): frm_range.columnconfigure(c, weight=1)
+        # for c in (1,3): frm_range.columnconfigure(c, weight=1)
         ttk.Label(frm_range, text="전방").grid(row=0, column=0, sticky="w", padx=8, pady=(8,4))
         ttk.Spinbox(frm_range, from_=0, to=5000, textvariable=self.var_rng_front, width=7, justify="right")\
             .grid(row=0, column=1, sticky="w", pady=(8,4))
@@ -159,7 +159,7 @@ class Settings(Tab):
         # ── 버프 ── (포션 사용 임계치 바로 아래)
         # __init__ 내, 포션/공격사거리 아래 적당한 위치에 배치
         frm_buffs = ttk.LabelFrame(self, text="버프들")
-        frm_buffs.grid(row=4, column=0, sticky="ew", padx=4, pady=(0,10))
+        frm_buffs.grid(row=row_index, column=0, sticky="ew", padx=4, pady=(0,10))
         frm_buffs.columnconfigure(0, weight=1)
 
         # 헤더 + 리스트 컨테이너
