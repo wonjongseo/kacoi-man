@@ -12,7 +12,11 @@ from src.routine.components import Point
 
 # Other players' symbols on the minimap
 OTHER_RANGES = (
-    ((0, 245, 215), (10, 255, 255)),
+((0, 245, 215), (10, 255, 255)),
+)
+
+PLAYER_RANGES = (
+    ((60, 100, 100), (55, 92, 85)),
 )
 
 # other_filtered = utils.filter_color(cv2.imread('assets/other.png'), OTHER_RANGES)

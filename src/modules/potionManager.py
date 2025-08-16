@@ -37,7 +37,7 @@ class PotionManager:
         """tpl 위치 한 번 찾고 ROI 반환"""
         with mss.mss() as sct:
             frame = np.array(sct.grab(
-                {"left":0, "top":0, "width":970, "height": 700}
+                {"left":0, "top":0, "width":config.SCREEN_WIDTH, "height": config.SCREEN_HEIGHT}
             ))[:, :, :3]
 
         res = cv2.matchTemplate(frame, tpl, cv2.TM_CCOEFF_NORMED)

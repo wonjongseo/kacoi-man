@@ -48,6 +48,10 @@ listener = None
 gui = None
 
 
+SCREEN_WIDTH =  970 # 1366 # 1280,
+SCREEN_HEIGHT = 700 # 768 # 720 
+
+
 # src/common/cleanup.py
 from src.common import config
 

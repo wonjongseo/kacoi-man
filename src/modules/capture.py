@@ -77,8 +77,8 @@ class Capture:
         self.window = { 
             'left' : 0,
             'right' : 0,
-            'width' : 970, # 1366,
-            'height': 700  # 768
+            'width' : config.SCREEN_WIDTH, # 1366,
+            'height': config.SCREEN_HEIGHT  # 768
         }
 
         # 상태 플래그
@@ -123,7 +123,7 @@ class Capture:
             if windows:
                 win = windows[0]
                 win.moveTo(0, 0)
-                win.resizeTo(970, 700)
+                win.resizeTo(config.SCREEN_WIDTH, config.SCREEN_HEIGHT)
                 handle_windows.activate_window(win.title)
                 config.TITLE = win.title
                 print(f"[INFO] '{win.title}' 창 크기 설정 완료.")
@@ -191,7 +191,6 @@ class Capture:
                     config.player_pos = utils.convert_to_relative(player[0], minimap)
                     config.player_pos_ab = (self.window['left'] + mm_tl[0] + player[0][0], self.window['top']  + mm_tl[1] + player[0][1])
                 
-                
                 PLAYER_NAME_TEMPLATE =  cv2.imread(config.setting_data.templates.character.name, 0)
                 player_name = utils.single_match(self.frame, PLAYER_NAME_TEMPLATE)
 
@@ -217,13 +216,17 @@ class Capture:
                         continue
                     
                     px, py = config.player_name_pos  # px = X, py = Y
-                           
                     front, back, up, down = config.setting_data.attack_range
                     
                     if config.bot.left_down and config.bot.right_down == False:
                         x1, x2 = max(0, px - front), px + back
-                    else:
+                    elif config.bot.right_down and config.bot.left_down == False:
                         x1, x2 = px - back, min(self.frame.shape[1], px + front)
+                    else: 
+                        config.bot.found_monster = False
+                        continue
+                    # else:
+                    #     x1, x2 = px - back, min(self.frame.shape[1], px + front)
                     
                     y1 = max(0, py - up)
                     y2 = min(self.frame.shape[0], py + down)
