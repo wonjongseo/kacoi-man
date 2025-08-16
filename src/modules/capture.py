@@ -93,15 +93,7 @@ class Capture:
         # self.potionThread.daemon = True
         
         self.window_resized = False
-        threading.Thread(
-        target=PotionManager(
-            bar_h_margin=2,      # 템플릿이 바 안쪽만 찍혔으면 0~2px 여유
-            bar_v_margin=0,
-            hp_thresh=0.4,       # 60 % 미만에서 사용
-            mp_thresh=0.5
-        ).loop,
-        daemon=True
-    ).start()
+        threading.Thread(target=PotionManager().loop,daemon=True).start()
 
 
     def start(self): 

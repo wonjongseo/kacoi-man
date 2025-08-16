@@ -15,7 +15,7 @@ class GUI:
     def __init__(self):
         config.gui = self
         self.root = tk.Tk()
-        self.root.title("Maple Helper")
+        self.root.title("원가네 헬퍼")
         self.root.geometry(GUI.RESOLUTIONS['DEFAULT'])
         self.root.resizable(False, False)
 
