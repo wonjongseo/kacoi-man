@@ -15,7 +15,10 @@ class PotionManager:
                               '한 덩어리' 템플릿.
     bar_color(BGR)          :  HP=(  0,  0,255)  MP=(255,128, 0) 등
     """
-    def __init__(self,interval=0.8):
+    def __init__(self,
+                 bar_h_margin=0, bar_v_margin=0,
+                 hp_thresh=0.55, mp_thresh=0.55,
+                 interval=0.8):
 
         self.hp_tpl = cv2.imread('assets/hp_bar.png')
         self.mp_tpl = cv2.imread('assets/mp_bar.png')
@@ -23,15 +26,10 @@ class PotionManager:
             raise FileNotFoundError("HP/MP 템플릿을 읽지 못했습니다")
         self.hp_roi = None
         self.mp_roi = None
-        self.margin_h = 2   # ROI 좌우 여유(픽셀)
-        self.margin_v = 0   # ROI 상하 여유(픽셀)
-        
-        self.hp_th  = config.setting_data.hp_pct
-        
-        
-        self.mp_th  = config.setting_data.hp_pct
-        print(f'self.hp_th : {self.hp_th}')
-        print(f'self.mp_th : {self.mp_th}')
+        self.margin_h = bar_h_margin   # ROI 좌우 여유(픽셀)
+        self.margin_v = bar_v_margin   # ROI 상하 여유(픽셀)
+        self.hp_th  = hp_thresh
+        self.mp_th  = mp_thresh
         self.interval = interval
     
     # ──────────────────────────────────────────────
@@ -54,8 +52,8 @@ class PotionManager:
         # ROI = 템플릿 + margin
         x1 = max(0, tx - self.margin_h)
         y1 = max(0, ty - self.margin_v)
-        x2 = min(config.SCREEN_WIDTH, tx + w + self.margin_h)
-        y2 = min(config.SCREEN_HEIGHT, ty + h + self.margin_v)
+        x2 = min(970, tx + w + self.margin_h)
+        y2 = min(700, ty + h + self.margin_v)
 
         
 
