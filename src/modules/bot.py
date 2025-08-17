@@ -323,23 +323,22 @@ class Bot:
             if config.enabled is False:
                 time.sleep(0.001)
                 continue
-
+                
             if self.found_monster :
                 self._ensure_key('z', 'z_down', False); 
                 self._ensure_key('shift', 'shift_down', True); 
 
                 if self.prev_char_pos and config.player_pos_ab:
-                    if math.hypot(config.player_pos_ab[0]-self.prev_char_pos[0],
-                                config.player_pos_ab[1]-self.prev_char_pos[1]) < 3:
+                    dif = math.hypot(config.player_pos_ab[0]-self.prev_char_pos[0],
+                                config.player_pos_ab[1]-self.prev_char_pos[1])
+                    if dif < 3:
                         self.stuck_attack_cnt += 1
                     else:
                         self.stuck_attack_cnt = 1
                 else:
                     self.stuck_attack_cnt = 1
                 
-
                 self.prev_char_pos = config.player_pos_ab
-                print(f'self.stuck_attack_cnt : {self.stuck_attack_cnt}')
                 
                 if self.stuck_attack_cnt >= 10:
                     print("[INFO] 같은 자리 10회 공격 → 강제 이동")
@@ -369,7 +368,7 @@ class Bot:
                 # 공격 가능 여부는 "거리"로 결정
                 self._refresh_can_attack(act, dx_abs)
 
-                if  target_y > cur_y + 6 and  cur_y - target_y > -28  :
+                if  target_y > cur_y + 6 and  cur_y - target_y > -35  :
                     print("?")
                     self.drop_down()
                     time.sleep(0.25)              # 낙하 안정화
@@ -437,6 +436,7 @@ class Bot:
 
             # 3) 충분히 가까우면 바로 부착(Up+Jump) 실행
             if abs(dx) <= ATTACH_WIN:
+                print("if abs(dx) <= ATTACH_WIN:")
                 self._ensure_key('up', 'up_down', True)
                 time.sleep(0.02)
                 pyautogui.press('alt')         
@@ -576,6 +576,7 @@ class Bot:
                 time.sleep(0.01)
 
             # 1) 즉시 부착 시도 (Up+Jump)
+            print("1) 즉시 부착 시도 (Up+Jump)")
             pyautogui.press("alt")   # 붙기 점프
             self._ensure_key('up', 'up_down', True)
             time.sleep(0.02)

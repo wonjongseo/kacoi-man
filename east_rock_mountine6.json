@@ -1,0 +1,48 @@
+[
+  {
+    "action": "ladder",
+    "x": 35,
+    "y": 119,
+    "end_y": 84
+  },
+  {
+    "action": "move",
+    "x": 78,
+    "y": 84
+  },
+  {
+    "action": "move",
+    "x": 99,
+    "y": 89
+  },
+  {
+    "action": "move",
+    "x": 130,
+    "y": 123
+  },
+  {
+    "action": "move",
+    "x": 56,
+    "y": 123
+  },
+  {
+    "action": "move",
+    "x": 114,
+    "y": 123
+  },
+  {
+    "action": "move",
+    "x": 58,
+    "y": 123
+  },
+  {
+    "action": "move",
+    "x": 114,
+    "y": 123
+  },
+  {
+    "action": "move",
+    "x": 58,
+    "y": 123
+  }
+]
