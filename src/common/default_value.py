@@ -1,0 +1,13 @@
+
+HP_PERCENT = 50
+MP_PERCENT = 50
+HP_KEY = 'del'
+MP_KEY = 'end'
+JUMP_KEY ='alt'
+ATTACK_KEY ='shift'
+
+RANGE_FRONT = 220
+RANGE_BACK =0
+RANGE_UP = 50
+RANGE_DOWN = 50
+

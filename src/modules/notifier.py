@@ -56,7 +56,7 @@ class Notifier:
         selected_other = config.setting_data.templates.minimap.other
         
         if selected_other is None or selected_other == "":
-            other_filtered = utils.filter_color(cv2.imread('assets/other.png'), OTHER_RANGES)
+            other_filtered = utils.filter_color(cv2.imread(utils.resource_path('assets/other.png')), OTHER_RANGES)
         else:
             other_filtered = utils.filter_color(cv2.imread(selected_other), OTHER_RANGES)
         OTHER_TEMPLATE = cv2.cvtColor(other_filtered, cv2.COLOR_BGR2GRAY)

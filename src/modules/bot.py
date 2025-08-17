@@ -2,8 +2,8 @@ import math
 import threading
 import time
 from src.command_book.command_book import CommandBook
-from src.constant import route_ptrol
 import pyautogui
+import re
 from src.common import config, utils,settings
 # from src.routine.routine import Routine
 
@@ -22,6 +22,18 @@ class RoutePatrol:
 
 
 class Bot:
+
+    def _flag_attr(self, key: str) -> str:
+        k = self._normalize_key(key)
+        # 영숫자/밑줄 외 제거 -> 밑줄로 치환
+        k = re.sub(r'[^0-9a-z_]', '_', k)
+        name = f"{k}_down"
+        # 숫자로 시작하면 접두사 부여 (예: '1' -> 'key_1_down')
+        if not re.match(r'^[a-z_]', name):
+            name = f"key_{name}"
+        return name
+
+
     def __init__(self):
         config.bot = self
 
@@ -32,6 +44,10 @@ class Bot:
         self.thread.daemon = True
         self.found_monster = False
         self.prev_direction = ''
+
+        self.attack_key = getattr(config.setting_data ,'attack_key' , 'shift')
+        self.jump_key = getattr(config.setting_data ,'jump_key' , 'alt')
+       
         self.shift_down = self.left_down = self.up_down = self.right_down = self.z_down = False
 
         self._last_x = None
@@ -114,7 +130,7 @@ class Bot:
             if (now - self._fm_stuck_since) >= self._fm_confirm_sec:
                 # 공격/불필요 입력 해제
                 self._ensure_key('z',     'z_down',     False)
-                self._ensure_key('shift', 'shift_down', False)
+                self._ensure_key(self.attack_key, 'shift_down', False)
                 self._ensure_key('left',  'left_down',  False)
                 self._ensure_key('right', 'right_down', False)
 
@@ -130,10 +146,10 @@ class Bot:
                 if self._fm_use_jump:
                     # 점프-대시(장애물 넘기 좋음)
                     self._ensure_key(escape_dir, f'{escape_dir}_down', True)
-                    pyautogui.keyDown('alt')
+                    pyautogui.keyDown(self.jump_key)
                     time.sleep(self._fm_press_sec)
                     self._ensure_key(escape_dir, f'{escape_dir}_down', False)
-                    pyautogui.keyUp('alt')
+                    pyautogui.keyUp(self.jump_key)
                 else:
                     # 걷기-대시(수평만)
                     self._ensure_key(escape_dir, f'{escape_dir}_down', True)
@@ -202,12 +218,10 @@ class Bot:
         last_direction = 'right' if self.right_down else 'left'
         
         self._ensure_key(last_direction, f'{last_direction}_down', False)
-        self._ensure_key('shift', 'shift_down', True)
+        self._ensure_key(self.attack_key, 'shift_down', True)
         time.sleep(0.01)
-        self._ensure_key('shift', 'shift_down', False)
+        self._ensure_key(self.attack_key, 'shift_down', False)
         self._ensure_key(last_direction, f'{last_direction}_down', True)
-
-             
 
     def _new_direction(self, new_direction):
         self._ensure_key('z',  'z_down', False)
@@ -218,12 +232,7 @@ class Bot:
         self.prev_direction = new_direction
         self._ensure_key('z',  'z_down', True)
 
-
-    
-
-
     def _probe_stuck_and_jump(self):
-        # 전투 중(shift_down)엔 점프하지 않음
         if self.shift_down or self.up_down:
             self._stuck_since = None
             self._last_x = None
@@ -253,7 +262,7 @@ class Bot:
 
             # 정체가 충분히 이어졌고, 쿨다운도 지났으면 점프
             if (now - self._stuck_since) >= self._stuck_confirm_sec :
-                pyautogui.press('alt')     # ← 점프!
+                pyautogui.press(self.jump_key)     # ← 점프!
                 self._last_jump_t = now
                 self._jump_tries += 1
 
@@ -272,38 +281,6 @@ class Bot:
         print('\n[~] Started main bot loop')
         self.thread.start()
 
-    def aa(self):
-        print("")
-        #여기부터
-                # if self.prev_char_pos and config.player_pos_ab:
-                #     if math.hypot(config.player_pos_ab[0]-self.prev_char_pos[0],
-                #                 config.player_pos_ab[1]-self.prev_char_pos[1]) < 3:
-                #         self.stuck_attack_cnt += 1
-                #     else:
-                #         self.stuck_attack_cnt = 1
-                # else:
-                #     self.stuck_attack_cnt = 1
-                
-
-                # self.prev_char_pos = config.player_pos_ab
-
-                # if self.stuck_attack_cnt >= 3:
-                #     print("[INFO] 같은 자리 3회 공격 → 강제 이동")
-                #     self._release_all_keys()
-                #     # (2) 0.4초간 오른쪽으로 대시
-                #     self._ensure_key('right',  'right_down', True)
-                #     pyautogui.keyDown('alt'); time.sleep(0.4)
-                #     self._ensure_key('right',  'right_down', False)
-                #     pyautogui.keyUp('alt')
-                #     self._ensure_key('z',  'z_down', False)
-                #     self.sync_waypoint_to_y()
-                #     # self.reselect_waypoint()
-                #     self.stuck_attack_cnt = 0
-                #     # ↑ 강제 이동 결정 후 곧바로 다음 루프
-                #     time.sleep(0.1)
-                #     continue     
-                # 여기부터 여기까지 확인
-                #                
     def _nudge_toward(self, target_x, step_ms=0.02):
         """한 번의 짧은 탭으로 x를 미세 조정."""
         cx = config.player_pos_ab[0]
@@ -326,7 +303,7 @@ class Bot:
                 
             if self.found_monster :
                 self._ensure_key('z', 'z_down', False); 
-                self._ensure_key('shift', 'shift_down', True); 
+                self._ensure_key(self.attack_key, 'shift_down', True); 
 
                 if self.prev_char_pos and config.player_pos_ab:
                     dif = math.hypot(config.player_pos_ab[0]-self.prev_char_pos[0],
@@ -344,7 +321,7 @@ class Bot:
                     print("[INFO] 같은 자리 10회 공격 → 강제 이동")
                     self.release_all_keys()
                     self.sync_direction()
-                    pyautogui.press('alt')
+                    pyautogui.press(self.jump_key)
                     self.sync_waypoint_to_y()
                     self.stuck_attack_cnt = 0
                     time.sleep(0.1)
@@ -353,7 +330,7 @@ class Bot:
                     
             else:
                 self.stuck_attack_cnt = 0
-                self._ensure_key('shift', 'shift_down', False); 
+                self._ensure_key(self.attack_key, 'shift_down', False); 
                 # self._ensure_key('z', 'z_down', True); 
                 
                 wp = config.routine.current_wp()
@@ -367,12 +344,12 @@ class Bot:
 
                 # 공격 가능 여부는 "거리"로 결정
                 self._refresh_can_attack(act, dx_abs)
-
-                if  target_y > cur_y + 6 and  cur_y - target_y > -35  :
+                if  target_y > cur_y + 6 :
                     print("?")
+                    print(f'cur_y : {cur_y}, target_y : {target_y}')
                     self.drop_down()
                     time.sleep(0.25)              # 낙하 안정화
-                    continue                      # 다음 loop 에서 다시 판단
+                    # continue                      # 다음 loop 에서 다시 판단
                 
                 elif target_y + 6 < cur_y:
                     print("??")
@@ -439,7 +416,7 @@ class Bot:
                 print("if abs(dx) <= ATTACH_WIN:")
                 self._ensure_key('up', 'up_down', True)
                 time.sleep(0.02)
-                pyautogui.press('alt')         
+                pyautogui.press(self.jump_key)         
                 self.is_climbing = True
                 self._no_attack_until = time.time() + 0.30
                 self.sync_direction()
@@ -515,7 +492,7 @@ class Bot:
 
         if wp.action == "ladder":
             # 사다리는 x 정밀도만 중요 (+/-1px)
-            tol = 0  if not (self.left_down or self.right_down) else 5
+            tol = 0  if not (self.left_down or self.right_down) else 1
             
             hit=  dx <= tol
         elif wp.action == "jump":
@@ -542,25 +519,25 @@ class Bot:
                 self._ensure_key('left',  'left_down',  False)
                 self._ensure_key('right', 'right_down', False)
                 # 공격/기타 키도 필요하면 해제
-                self._ensure_key('shift', 'shift_down', False)
+                self._ensure_key(self.attack_key, 'shift_down', False)
                 # 약간의 안정화
                 time.sleep(0.5)
 
                 for _ in range(cnt):
-                    pyautogui.press('alt')
+                    pyautogui.press(self.jump_key)
                     time.sleep(0.5)
                 print("RETURN")
                 return True
             else:
                 # 이동 점프(횟수만큼)
                 for _ in range(cnt):
-                    pyautogui.press('alt')
+                    pyautogui.press(self.jump_key)
                     time.sleep(0.5)
                 return True
         
         if wp.action == "ladder":
             if self.shift_down:
-                self._ensure_key('shift', 'shift_down', False)
+                self._ensure_key(self.attack_key, 'shift_down', False)
 
             self._ensure_key('left',  'left_down', False)
             self._ensure_key('right', 'right_down', False)
@@ -577,7 +554,7 @@ class Bot:
 
             # 1) 즉시 부착 시도 (Up+Jump)
             print("1) 즉시 부착 시도 (Up+Jump)")
-            pyautogui.press("alt")   # 붙기 점프
+            pyautogui.press(self.jump_key)   # 붙기 점프
             self._ensure_key('up', 'up_down', True)
             time.sleep(0.02)
             self.is_climbing = True
@@ -636,12 +613,12 @@ class Bot:
     def drop_down(self):
         """↓+Alt 로 아래 플랫폼으로 내려가기"""
         pyautogui.keyDown('down')
-        pyautogui.press('alt')       # 점프키 → 드랍
+        pyautogui.press(self.jump_key)       # 점프키 → 드랍
         time.sleep(0.12)             # 짧게 눌렀다 떼기
         pyautogui.keyUp('down')
 
     def release_all_keys(self):
-        for k in ('shift', 'left', 'right', 'up', 'down', 'z'):
+        for k in (self.attack_key, 'left', 'right', 'up', 'down', 'z'):
             pyautogui.keyUp(k)
         self.shift_down = self.left_down = self.up_down = self.right_down = self.z_down = False
 

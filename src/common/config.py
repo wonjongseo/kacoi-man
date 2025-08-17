@@ -47,6 +47,8 @@ listener = None
 # Shares the gui to all modules
 gui = None
 
+macro_thread = None
+macro_shutdown_evt = None
 
 SCREEN_WIDTH =  970 # 1366 # 1280,
 SCREEN_HEIGHT = 700 # 768 # 720 

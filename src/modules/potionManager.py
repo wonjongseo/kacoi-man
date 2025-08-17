@@ -6,7 +6,7 @@ import cv2
 import mss
 import numpy as np
 import pyautogui
-from src.common import config
+from src.common import config, utils
 
 
 class PotionManager:
@@ -17,8 +17,8 @@ class PotionManager:
     """
     def __init__(self,interval=0.8):
 
-        self.hp_tpl = cv2.imread('assets/hp_bar.png')
-        self.mp_tpl = cv2.imread('assets/mp_bar.png')
+        self.hp_tpl = cv2.imread(utils.resource_path('assets/hp_bar.png'))
+        self.mp_tpl = cv2.imread(utils.resource_path('assets/mp_bar.png'))
         if self.hp_tpl is None or self.mp_tpl is None:
             raise FileNotFoundError("HP/MP 템플릿을 읽지 못했습니다")
         self.hp_roi = None

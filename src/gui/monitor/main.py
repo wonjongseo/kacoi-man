@@ -65,10 +65,14 @@ class Monitor(Tab):
 
 
     def set_enable(self):
-        if config.enabled:
-            self.bot_status_var.set("작동중")
+        if config.setting_data == None:
+            self.bot_status_var.set("게임 설정 준비 전")
+        elif config.routine == None:
+            self.bot_status_var.set("루틴 설정 준비 전")
+        elif config.enabled:
+            self.bot_status_var.set("작동 중")
         else:
-            self.bot_status_var.set("멈춤")
+            self.bot_status_var.set("준비 완료 / 멈춤")
 
     def refresh_labels(self):
         self.set_enable()

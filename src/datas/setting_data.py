@@ -116,8 +116,10 @@ class SettingsConfig:
     monster_dir: str = ""
     hp_pct: int = 50
     mp_pct: int = 50
-    hp_key: str = ""        # ← 추가
-    mp_key: str = ""        # ← 추가
+    hp_key: str = "del"        
+    mp_key: str = "end"       
+    jump_key : str = "alt"       
+    attack_key : str = "shift"       
     attack_range: AttackRange = field(default_factory=AttackRange)
     templates: Templates = field(default_factory=Templates)
     buffs: List[BuffSettings] = field(default_factory=list)
@@ -132,8 +134,10 @@ class SettingsConfig:
             monster_dir=(d.get("monster_dir") or "").strip(),
             hp_pct=_clamp_int(d.get("hp_pct"), 0, 100, 50),
             mp_pct=_clamp_int(d.get("mp_pct"), 0, 100, 50),
-            hp_key=(d.get("hp_key") or "").strip(),   # ← 추가
-            mp_key=(d.get("mp_key") or "").strip(),   # ← 추가
+            hp_key=(d.get("hp_key") or "").strip(),   
+            mp_key=(d.get("mp_key") or "").strip(),   
+            jump_key=(d.get("jump_key") or "alt").strip(),   
+            attack_key=(d.get("attack_key") or "shift").strip(),   
             attack_range=AttackRange.from_dict(d.get("attack_range") or {}),
             templates=Templates.from_dict(d.get("templates") or {}),
             buffs=[BuffSettings.from_dict(x) for x in (d.get("buffs") or [])],  # ← 파싱

@@ -32,14 +32,14 @@ WINDOWED_OFFSET_LEFT = 0 #10 # 창 모드일 때 좌측 보정
 
 PLAYER_INFO_TOP = 620
 
-MM_TL_TEMPLATE = cv2.imread('assets/minimap_topLeft.png', 0)
-MM_BR_TEMPLATE = cv2.imread('assets/minimap_bottomRight.png', 0)
+MM_TL_TEMPLATE = cv2.imread(utils.resource_path('assets/minimap_topLeft.png'), 0)
+MM_BR_TEMPLATE = cv2.imread(utils.resource_path('assets/minimap_bottomRight.png'), 0)
 
 # 이 (MMT_HEIGHT, MMT_WIDTH) 크기만큼은 최소한 확보해야 템플릿 전체가 포함된다
 MMT_HEIGHT = max(MM_TL_TEMPLATE.shape[0], MM_BR_TEMPLATE.shape[0])
 MMT_WIDTH = max(MM_TL_TEMPLATE.shape[1], MM_BR_TEMPLATE.shape[1])
 
-PLAYER_TEMPLATE = cv2.imread('assets/me.png', 0)
+PLAYER_TEMPLATE = cv2.imread(utils.resource_path('assets/me.png'), 0)
 PT_HEIGHT, PT_WIDTH = PLAYER_TEMPLATE.shape
 
 
@@ -210,20 +210,37 @@ class Capture:
                     px, py = config.player_name_pos  # px = X, py = Y
                     front, back, up, down = config.setting_data.attack_range
                     
-                    if config.bot.left_down and config.bot.right_down == False:
-                        x1, x2 = max(0, px - front), px + back
-                    elif config.bot.right_down and config.bot.left_down == False:
-                        x1, x2 = px - back, min(self.frame.shape[1], px + front)
-                    else: 
-                        config.bot.found_monster = False
-                        continue
-                    # else:
+                    # if config.bot.left_down and config.bot.right_down == False:
+                    #     x1, x2 = max(0, px - front), px + back
+                    # elif config.bot.right_down and config.bot.left_down == False:
                     #     x1, x2 = px - back, min(self.frame.shape[1], px + front)
+                    # else: 
+                    #     config.bot.found_monster = False
+                    #     continue
                     
-                    y1 = max(0, py - up)
-                    y2 = min(self.frame.shape[0], py + down)
+                    # y1 = max(0, py - up)
+                    # y2 = min(self.frame.shape[0], py + down)
 
-                    x1, x2, y1, y2 = map(int, (x1, x2, y1, y2))
+                    # x1, x2, y1, y2 = map(int, (x1, x2, y1, y2))
+                    H, W = self.frame.shape[:2]
+
+                    if config.bot.left_down and not config.bot.right_down:
+                        x1, x2 = px - front, px + back
+                    elif config.bot.right_down and not config.bot.left_down:
+                        x1, x2 = px - back,  px + front
+                    else:
+                        config.bot.found_monster = False
+                        return  # 또는 continue
+
+                    y1, y2 = py - up, py + down
+
+                    # 경계 클램프 + 정수화
+                    x1 = max(0, int(x1)); y1 = max(0, int(y1))
+                    x2 = min(W, int(x2)); y2 = min(H, int(y2))
+
+                    # 영역 검증
+                    if x2 <= x1 or y2 <= y1:
+                        return  # 또는 continue
 
                     attack_area = self.frame[y1:y2, x1:x2]
                     if attack_area.size == 0:

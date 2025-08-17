@@ -3,12 +3,13 @@ import queue
 import threading
 import cv2
 import os
+import sys
 import mss
 import numpy as np
 from src.common import config
 from tkinter import  messagebox
 from random import random
-
+from pathlib import Path
 def run_if_enabled(function):
     """
     Decorator for functions that should only run if the bot is enabled.
@@ -187,11 +188,23 @@ def center_from_bounds(top_left, bottom_right):
     cy = (y1 + y2) / 2
     return cx, cy
 
+
 def load_templates(folder):
+
+    def safe_imread(path, flags=cv2.IMREAD_GRAYSCALE):
+        p = Path(path)
+        if not p.exists():
+            display_message("[ERROR]", f"파일 없음: {p}" )
+            return None
+        img = cv2.imread(str(p), flags)
+        if img is None:
+            display_message("[ERROR]", f"이미지 로드 실패(손상/포맷 문제): {p}" )
+        return img
+    
     try:
         temps = []
         for f in os.listdir(folder):
-            img = cv2.imread(os.path.join(folder, f), 0)
+            img = safe_imread(os.path.join(folder, f), 0)
             if img is None:
                 continue
             temps.append(img)
@@ -200,6 +213,75 @@ def load_templates(folder):
         return temps
     except:
         display_message('경고', f'{folder}\n는 잘못된 폴더 경로입니다.')
+
+
+
+
+def validate_input(value):
+    """
+    입력값 타입 및 유효성 검사 함수
+
+    Args:
+        value (str|int|float): 검사할 값
+
+    Returns:
+        dict: {
+            "is_folder": bool,
+            "is_image_file": bool,
+            "is_number": bool,
+            "is_string": bool,
+            "valid": bool
+        }
+    """
+    result = {
+        "is_folder": False,
+        "is_image_file": False,
+        "is_number": False,
+        "is_string": False,
+        "valid": False
+    }
+
+    # None 또는 빈값 처리
+    if value is None or str(value).strip() == "":
+        return result
+
+    # 숫자 여부 체크
+    if isinstance(value, (int, float)):
+        result["is_number"] = True
+        result["valid"] = True
+        return result
+    
+    # 문자열일 경우
+    if isinstance(value, str):
+        # 폴더 경로인지 확인
+        if os.path.isdir(value):
+            result["is_folder"] = True
+            result["valid"] = True
+            return result
+
+        # 이미지 파일 경로인지 확인
+        if os.path.isfile(value):
+            ext = os.path.splitext(value)[1].lower()
+            if ext in [".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tiff"]:
+                result["is_image_file"] = True
+                result["valid"] = True
+                return result
+        
+        # 문자열이 숫자로 변환 가능한지 확인
+        try:
+            float(value)
+            result["is_number"] = True
+            result["valid"] = True
+            return result
+        except ValueError:
+            pass
+
+        # 그냥 문자열로 취급
+        result["is_string"] = True
+        result["valid"] = True
+        return result
+    
+    return result
 
 
 
@@ -218,3 +300,24 @@ def rand_float(start, end):
 
     assert start < end, 'START must be less than END'
     return (end - start) * random() + start
+
+
+def resource_path(relative: str) -> str:
+    """
+    PyInstaller (--onefile) / 개발 둘 다에서 에셋의 절대경로를 찾아서 반환.
+    relative: 'assets/xxx.png' 처럼 프로젝트 루트 기준 상대경로
+    """
+    # 1) PyInstaller 실행(특히 --onefile)에서는 _MEIPASS에 풀립니다.
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        p = Path(sys._MEIPASS) / relative
+        return str(p)
+
+    # 2) 개발환경: 현재 파일에서 위로 올라가며 대상 경로가 존재하는 곳을 탐색
+    here = Path(__file__).resolve()
+    for base in [here] + list(here.parents):
+        cand = base.parent / relative if base.name == 'common' else base / relative
+        if cand.exists():
+            return str(cand)
+
+    # 3) 마지막으로 현재 작업경로 기준 시도
+    return str(Path(relative).resolve())

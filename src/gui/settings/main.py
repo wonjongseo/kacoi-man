@@ -11,7 +11,8 @@ from src.gui.interfaces import Tab,LabelFrame
 import tkinter as tk
 from tkinter import  ttk, filedialog, messagebox
 import src.datas.setting_data as sd
-from  src.common  import config
+from  src.common  import config, default_value as dv, utils
+
 
 
 def add_placeholder(entry, placeholder):
@@ -31,17 +32,50 @@ def add_placeholder(entry, placeholder):
         entry.bind("<FocusOut>", on_focus_out)
         
 class Settings(Tab):
+    def _create_required_feild(self, row_index):
+        frm_required = ttk.LabelFrame(self, text="---필수 항목---")
+        frm_required.grid(row=row_index, column=0, sticky="ew", padx=4, pady=(0, 10))
 
-    def _create_monster_feild(self,row_index):
-        # 몬스터 폴더
-        frm_mon = ttk.LabelFrame(self, text="몬스터 폴더")
-        frm_mon.grid(row=row_index, column=0, sticky="ew", padx=4)
+        # --- 한 행에 두 칼럼 배치 ---
+        frm_required.columnconfigure(0, weight=1)
+        frm_required.columnconfigure(1, weight=1)
+
+        # [Column 1] 몬스터 폴더
+        frm_mon = ttk.LabelFrame(frm_required, text="몬스터 폴더")
+        frm_mon.grid(row=0, column=0, sticky="ew", padx=(8, 4), pady=8)
         frm_mon.columnconfigure(0, weight=1)
         ttk.Entry(frm_mon, textvariable=self.var_monster_dir)\
-            .grid(row=0, column=0, sticky="ew", padx=(8,4), pady=8)
+            .grid(row=0, column=0, sticky="ew", padx=(8, 4), pady=8)
         ttk.Button(frm_mon, text="찾아보기…",
-                   command=lambda: self._browse_dir(self.var_monster_dir))\
-            .grid(row=0, column=1, sticky="ew", padx=(0,8), pady=8)
+                command=lambda: self._browse_dir(self.var_monster_dir))\
+            .grid(row=0, column=1, sticky="ew", padx=(0, 8), pady=8)
+
+        # [Column 2] 캐릭터 이름 이미지
+        frm_chr = ttk.LabelFrame(frm_required, text="캐릭터 이름 이미지 (PNG)")
+        frm_chr.grid(row=0, column=1, sticky="ew", padx=(4, 8), pady=8)
+        frm_chr.columnconfigure(0, weight=1)
+        ttk.Entry(frm_chr, textvariable=self.var_chr_name)\
+            .grid(row=0, column=0, sticky="ew", padx=(8, 4), pady=8)
+        ttk.Button(frm_chr, text="찾기",
+                command=lambda: self._browse_png(self.var_chr_name))\
+            .grid(row=0, column=1, sticky="ew", padx=(0, 8), pady=8)
+
+        # [Row 1][Col 0] 점프 키 : 입력란
+        frm_jump = ttk.Frame(frm_required)
+        frm_jump.grid(row=1, column=0, sticky="ew", padx=(8, 4), pady=(0, 8))
+        frm_jump.columnconfigure(1, weight=1)
+        ttk.Label(frm_jump, text="점프 키").grid(row=0, column=0, sticky="w", padx=(0, 4))
+        entry_jump = ttk.Entry(frm_jump, textvariable=self.var_jump_key)
+        entry_jump.grid(row=0, column=1, sticky="ew", padx=(0, 8))
+
+        # [Row 1][Col 1] 공격 키 : 입력란
+        frm_attack = ttk.Frame(frm_required)
+        frm_attack.grid(row=1, column=1, sticky="ew", padx=(4, 8), pady=(0, 8))
+        frm_attack.columnconfigure(1, weight=1)
+        ttk.Label(frm_attack, text="공격 키").grid(row=0, column=0, sticky="w", padx=(0, 4))
+        entry_attack = ttk.Entry(frm_attack, textvariable=self.var_attack_key)
+        entry_attack.grid(row=0, column=1, sticky="ew", padx=(0, 8))
+
     def _create_potion_feild(self,row_index):
         # 포션 임계치
         frm_potion = ttk.LabelFrame(self, text="포션 사용 임계치 (%)")
@@ -75,7 +109,7 @@ class Settings(Tab):
         # 공격 사거리(px)
         frm_range = ttk.LabelFrame(self, text="공격 사거리 (px)")
         frm_range.grid(row=row_index, column=0, sticky="ew", padx=4)
-        # for c in (1,3): frm_range.columnconfigure(c, weight=1)
+        for c in (1,3): frm_range.columnconfigure(c, weight=1)
         ttk.Label(frm_range, text="전방").grid(row=0, column=0, sticky="w", padx=8, pady=(8,4))
         ttk.Spinbox(frm_range, from_=0, to=5000, textvariable=self.var_rng_front, width=7, justify="right")\
             .grid(row=0, column=1, sticky="w", pady=(8,4))
@@ -123,7 +157,7 @@ class Settings(Tab):
             .grid(row=2, column=5, padx=(0,8), pady=(4,0))
 
         # -- 캐릭터 --
-        ttk.Label(frm_tmpl, text="-- 캐릭터 --").grid(row=3, column=0, columnspan=5, sticky="w", padx=8, pady=(10,4))
+        ttk.Label(frm_tmpl, text="-- 캐릭터 --").grid(row=3, column=0, columnspan=5, sticky="w", padx=8, pady=(10,8))
 
         ttk.Label(frm_tmpl, text="HP 바 이미지").grid(row=4, column=0, sticky="w", padx=8)
         ttk.Entry(frm_tmpl, textvariable=self.var_chr_hp)\
@@ -137,13 +171,9 @@ class Settings(Tab):
         ttk.Button(frm_tmpl, text="찾기", command=lambda: self._browse_png(self.var_chr_mp))\
             .grid(row=4, column=5, padx=(0,8))
 
-        ttk.Label(frm_tmpl, text="캐릭터 이름 이미지").grid(row=5, column=0, sticky="w", padx=8, pady=(4,8))
-        entry = ttk.Entry(frm_tmpl, textvariable=self.var_chr_name)
-        entry.grid(row=5, column=1, sticky="ew", padx=(0,4), pady=(4,8))
-        ttk.Button(frm_tmpl, text="찾기", command=lambda: self._browse_png(self.var_chr_name))\
-            .grid(row=5, column=2, padx=(0,8), pady=(4,8))
+       
         
-        add_placeholder(entry, placeholder="필수 값입니다.")
+        # add_placeholder(entry, placeholder="필수 값입니다.")
         
         # -- 기타 --
         # ttk.Label(frm_tmpl, text="-- 기타 --").grid(row=6, column=0, columnspan=5,
@@ -207,17 +237,20 @@ class Settings(Tab):
 
         self.columnconfigure(0, weight=1)
         # ===== Vars =====
+        self.var_jump_key = tk.StringVar(value='alt')
+        self.var_attack_key = tk.StringVar(value='shift')
+
         self.var_monster_dir = tk.StringVar()
-        self.var_hp_pct = tk.IntVar(value=50)
-        self.var_hp_key = tk.StringVar(value="del")
-        self.var_mp_pct = tk.IntVar(value=50)
-        self.var_mp_key = tk.StringVar(value="end")
+        self.var_hp_pct = tk.IntVar(value=dv.HP_PERCENT)
+        self.var_mp_pct = tk.IntVar(value=dv.MP_PERCENT)
+        self.var_hp_key = tk.StringVar(value=dv.HP_KEY)
+        self.var_mp_key = tk.StringVar(value=dv.MP_KEY)
 
         # 공격 사거리(px)
-        self.var_rng_front = tk.IntVar(value=220)
-        self.var_rng_back  = tk.IntVar(value=0)
-        self.var_rng_up    = tk.IntVar(value=50)
-        self.var_rng_down  = tk.IntVar(value=50)
+        self.var_rng_front = tk.IntVar(value=dv.RANGE_FRONT)
+        self.var_rng_back  = tk.IntVar(value=dv.RANGE_BACK)
+        self.var_rng_up    = tk.IntVar(value=dv.RANGE_UP)
+        self.var_rng_down  = tk.IntVar(value=dv.RANGE_DOWN)
 
         # 템플레이트(이미지 경로)
         self.var_mm_tl   = tk.StringVar()  # minimap top-left
@@ -239,35 +272,30 @@ class Settings(Tab):
         ttk.Button(btns, text="💾 저장", command=self._save_json).grid(row=0, column=2, padx=6,      pady=(0,6))
         ttk.Button(btns, text="📂 불러오기", command=self._load_json).grid(row=0, column=3, padx=6,      pady=(0,6))
         ttk.Button(btns, text="초기화", command=self._reset).grid(row=0, column=4, padx=(6,0),  pady=(0,6))
-        
 
-        # content_frame = ttk.Frame(self, padding=10)  # 전체 컨텐츠 패딩
-        # content_frame.grid(row=1, column=0, sticky="nsew", columnspan=4)
-        self._create_template_images_feild(1)
 
-        self._create_monster_feild(2)
-
+        self._create_required_feild(1)
+        self._create_template_images_feild(2)
         self._create_attack_range_feild(3)
-
         self._create_potion_feild(4)
-        
         self._create_buff_feild(5)
 
-    
     
     
     def get_config(self) -> sd.SettingsConfig:
         cfg = sd.SettingsConfig(
             monster_dir=self.var_monster_dir.get().strip(),
-            hp_pct=sd._clamp_int(self.var_hp_pct.get(), 0, 100, 50),
-            mp_pct=sd._clamp_int(self.var_mp_pct.get(), 0, 100, 50),
-            hp_key=(self.var_hp_key.get() or "del").strip(),   # ← 추가
-            mp_key=(self.var_mp_key.get() or "del").strip(),   # ← 추가
+            hp_pct=sd._clamp_int(self.var_hp_pct.get(), 0, 100, dv.HP_PERCENT),
+            mp_pct=sd._clamp_int(self.var_mp_pct.get(), 0, 100, dv.MP_PERCENT),
+            hp_key=(self.var_hp_key.get() or dv.HP_KEY).strip(),   # ← 추가
+            mp_key=(self.var_mp_key.get() or dv.MP_KEY).strip(),   # ← 추가
+            jump_key = (self.var_jump_key.get() or dv.JUMP_KEY).strip(),   # ← 추가
+            attack_key = (self.var_attack_key.get() or dv.ATTACK_KEY).strip(),   # ← 추가
             attack_range=sd.AttackRange(
-                front=sd._clamp_int(self.var_rng_front.get(), 0, 5000, 200),
-                back=sd._clamp_int(self.var_rng_back.get(), 0, 5000, 120),
-                up=sd._clamp_int(self.var_rng_up.get(), 0, 5000, 120),
-                down=sd._clamp_int(self.var_rng_down.get(), 0, 5000, 80),
+                front=sd._clamp_int(self.var_rng_front.get(), 0, 5000, dv.RANGE_FRONT),
+                back=sd._clamp_int(self.var_rng_back.get(), 0, 5000, dv.RANGE_BACK),
+                up=sd._clamp_int(self.var_rng_up.get(), 0, 5000, dv.RANGE_UP),
+                down=sd._clamp_int(self.var_rng_down.get(), 0, 5000, dv.RANGE_DOWN),
             ),
             templates=sd.Templates(
                 minimap=sd.MinimapTemplates(
@@ -297,14 +325,17 @@ class Settings(Tab):
             return
 
         self.var_monster_dir.set(cfg.monster_dir)
-        self.var_hp_pct.set(cfg.hp_pct)
-        self.var_mp_pct.set(cfg.mp_pct)
-        self.var_hp_key.set(getattr(cfg, "hp_key", "del"))  
-        self.var_mp_key.set(getattr(cfg, "mp_key", "end"))  
-        self.var_rng_front.set(cfg.attack_range.front)
-        self.var_rng_back.set(cfg.attack_range.back)
-        self.var_rng_up.set(cfg.attack_range.up)
-        self.var_rng_down.set(cfg.attack_range.down)
+        self.var_hp_pct.set(getattr(cfg, "hp_pct", dv.HP_PERCENT))
+        self.var_mp_pct.set(getattr(cfg, "hp_pct", dv.MP_PERCENT))
+        self.var_hp_key.set(getattr(cfg, "hp_key", dv.HP_KEY))  
+        self.var_mp_key.set(getattr(cfg, "mp_key", dv.MP_KEY))  
+        self.var_jump_key.set(getattr(cfg, "jump_key", dv.JUMP_KEY))
+        self.var_attack_key.set(getattr(cfg, "attack_key", dv.ATTACK_KEY))
+
+        self.var_rng_front.set(getattr(cfg.attack_range, 'front', dv.RANGE_FRONT))
+        self.var_rng_back.set(getattr(cfg.attack_range, 'back', dv.RANGE_BACK))
+        self.var_rng_up.set(getattr(cfg.attack_range, 'up', dv.RANGE_UP))
+        self.var_rng_down.set(getattr(cfg.attack_range, 'down', dv.RANGE_DOWN))
 
         self.var_mm_tl.set(cfg.templates.minimap.top_left)
         self.var_mm_br.set(cfg.templates.minimap.bottom_right)
@@ -380,31 +411,43 @@ class Settings(Tab):
     def _reset(self):
         self.var_monster_dir.set("")
         
-        self.var_hp_pct.set(50)
-        self.var_mp_pct.set(50)
-        self.var_hp_key.set("")
-        self.var_mp_key.set("") 
-        self.var_rng_front.set(200)
-        self.var_rng_back.set(120)
-        self.var_rng_up.set(120)
-        self.var_rng_down.set(80)
+        self.var_hp_pct.set(dv.HP_PERCENT)
+        self.var_mp_pct.set(dv.MP_PERCENT)
+        self.var_hp_key.set(dv.HP_KEY)
+        self.var_mp_key.set(dv.MP_KEY) 
+        self.var_jump_key.set(dv.JUMP_KEY) 
+        self.var_attack_key.set(dv.ATTACK_KEY) 
+        self.var_rng_front.set(dv.RANGE_FRONT)
+        self.var_rng_back.set(dv.RANGE_BACK)
+        self.var_rng_up.set(dv.RANGE_UP)
+        self.var_rng_down.set(dv.RANGE_DOWN)
         self.var_misc_revive.set("")
 
         
-        for v in (self.var_mm_tl, self.var_mm_br, self.var_mm_me, self.var_mm_other,
-                  self.var_chr_hp, self.var_chr_mp, self.var_chr_name):
+        for v in (self.var_mm_tl, self.var_mm_br, self.var_mm_me, self.var_mm_other, self.var_chr_hp, self.var_chr_mp, self.var_chr_name):
             v.set("")
-
 
     
     def _apply(self, show_msg = True):
         cfg = self.get_config()
         
         if cfg.monster_dir == "":
-            messagebox.showwarning("확인", "몬스터 폴더를 선택하세요.")
+            messagebox.showwarning("필수", "몬스터 폴더를 선택 후 적용해주세요.")
+            return
+        elif utils.validate_input(cfg.monster_dir)['is_folder'] != True:
+            messagebox.showwarning("형식 불일치", "입력 값이 폴더 형식이 아닙니다.\n몬스터 폴더를 다시 선택 후 적용해주세요.")
             return
         elif cfg.templates.character.name == "":
-            messagebox.showwarning("확인", "캐릭터(이름) 이미지를 선택하세요.")
+            messagebox.showwarning("필수", "캐릭터(이름) 이미지를 선택 후 후 적용해주세요.")
+            return
+        elif utils.validate_input(cfg.templates.character.name)['is_image_file'] != True:
+            messagebox.showwarning("형식 불일치", "입력 값이 폴더 형식이 아닙니다.\n몬스터 폴더를 다시 선택 후 적용해주세요.")
+            return
+        elif cfg.jump_key == "":
+            messagebox.showwarning("필수", "점프 키 입력 후 적용해주세요.")
+            return
+        elif cfg.attack_key == "":
+            messagebox.showwarning("필수", "공격 키 입력 후 적용해주세요.")
             return
         if show_msg:
             messagebox.showinfo("적용됨", "설정이 적용되었습니다.")
