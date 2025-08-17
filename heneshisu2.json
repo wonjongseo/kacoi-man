@@ -1,12 +1,66 @@
-
 [
-    {"x": 57, "y":159, "end_y": 144, "action":"ladder"},
-     {"x": 94, "y":144, "action":"move"},
-     {"x": 80, "y":144, "end_y": 129, "action":"ladder"},
-     {"x": 57, "y":129, "action":"move"},
-     {"x": 67, "y":129, "end_y": 117, "action":"ladder"},
-     {"x": 63, "y":116, "action":"move"},
-     {"x": 83, "y":116, "end_y": 102, "action":"ladder"},
-     {"x": 51, "y":102, "action":"move"}
+  {
+    "action": "ladder",
+    "x": 57,
+    "y": 159,
+    "end_y": 144
+  },
+  {
+    "action": "move",
+    "x": 94,
+    "y": 144
+  },
+  {
+    "action": "ladder",
+    "x": 80,
+    "y": 144,
+    "end_y": 129
+  },
+  {
+    "action": "move",
+    "x": 57,
+    "y": 129
+  },
+  {
+    "action": "ladder",
+    "x": 67,
+    "y": 129,
+    "end_y": 117
+  },
+  {
+    "action": "move",
+    "x": 63,
+    "y": 116
+  },
+  {
+    "action": "ladder",
+    "x": 83,
+    "y": 116,
+    "end_y": 102
+  },
+  {
+    "action": "move",
+    "x": 51,
+    "y": 102
+  },
+  {
+    "action": "move",
+    "x": 89,
+    "y": 116
+  },
+  {
+    "action": "move",
+    "x": 55,
+    "y": 128
+  },
+  {
+    "action": "move",
+    "x": 103,
+    "y": 144
+  },
+  {
+    "action": "move",
+    "x": 111,
+    "y": 163
+  }
 ]
-

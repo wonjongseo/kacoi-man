@@ -67,39 +67,7 @@ class Bot:
         self._fm_cooldown = 0.6       # 강제 이동 후 쿨다운(초)
         self._fm_use_jump = True      # True면 점프-대시(Alt+방향), False면 걷기만
         self._fm_last_exec_t = 0.0
-
-        # ▼ 사다리 낙하 감지/복구 파라미터
-        self._ladder_guard_y = None     # ladder 접근 시작 시 기준 y
-        self._ladder_fall_tol = 8       # 이 픽셀 이상 y 증가(아래로 하강)하면 낙하로 판정
-        self._ladder_fall_cooldown = 0.4
-        self._last_ladder_fall_t = 0.0
-
-    def _on_ladder_fall(self, context=""):
-        """사다리 접근/등반 중 낙하(y 증가) 감지 시 공용 복구."""
-        now = time.time()
-        if (now - self._last_ladder_fall_t) < self._ladder_fall_cooldown:
-            return  # 너무 잦은 중복 처리 방지
-
-        self._last_ladder_fall_t = now
-        print(f"[WARN] Ladder fall detected during {context}. Recovering...")
-
-        # 등반/이동 키 정리
-        self._ensure_key('up',    'up_down',    False)
-        self._ensure_key('left',  'left_down',  False)
-        self._ensure_key('right', 'right_down', False)
-        self._ensure_key('z',     'z_down',     False)
-
-        self.is_climbing = False
-        self._no_attack_until = now + 0.25
-
-        # 현재 위치 기준으로 가장 가까운 WP로 재동기화 (y 우선)
-        self.sync_waypoint_to_y()
-
-        # 방향 짧게 싱크로 캐릭터 정렬(이미 있는 헬퍼 활용)
-        self.sync_direction()
-
-        # 가드 리셋
-        self._ladder_guard_y = None
+    
     def _fm_reset(self):
         """강제 이동 스턱 상태 리셋"""
         self._fm_stuck_since = None
@@ -360,9 +328,34 @@ class Bot:
                 self._ensure_key('z', 'z_down', False); 
                 self._ensure_key('shift', 'shift_down', True); 
 
+                if self.prev_char_pos and config.player_pos_ab:
+                    if math.hypot(config.player_pos_ab[0]-self.prev_char_pos[0],
+                                config.player_pos_ab[1]-self.prev_char_pos[1]) < 3:
+                        self.stuck_attack_cnt += 1
+                    else:
+                        self.stuck_attack_cnt = 1
+                else:
+                    self.stuck_attack_cnt = 1
+                
+
+                self.prev_char_pos = config.player_pos_ab
+                print(f'self.stuck_attack_cnt : {self.stuck_attack_cnt}')
+                
+                if self.stuck_attack_cnt >= 10:
+                    print("[INFO] 같은 자리 10회 공격 → 강제 이동")
+                    self.release_all_keys()
+                    self.sync_direction()
+                    pyautogui.press('alt')
+                    self.sync_waypoint_to_y()
+                    self.stuck_attack_cnt = 0
+                    time.sleep(0.1)
+                    continue     
                 time.sleep(0.1)
+                    
             else:
+                self.stuck_attack_cnt = 0
                 self._ensure_key('shift', 'shift_down', False); 
+                # self._ensure_key('z', 'z_down', True); 
                 
                 wp = config.routine.current_wp()
                 target_x, target_y, act = wp.x, wp.y, wp.action
@@ -376,7 +369,7 @@ class Bot:
                 # 공격 가능 여부는 "거리"로 결정
                 self._refresh_can_attack(act, dx_abs)
 
-                if  target_y > cur_y + 6 and  cur_y - target_y > -30  :
+                if  target_y > cur_y + 6 and  cur_y - target_y > -28  :
                     print("?")
                     self.drop_down()
                     time.sleep(0.25)              # 낙하 안정화
@@ -387,11 +380,13 @@ class Bot:
                     if act != "ladder":
                         print("???")
                         self.sync_waypoint_to_y()
+                        
                     else:
                         # X가 충분히 멀다(=사다리 접근도 못하는 위치) + Up 미홀드(등반중 아님) → 재동기화 허용 
                         if (not self.up_down) and (dx_abs > 12 or dy_abs > 6):   # 16은 맵에 맞춰 조정 가능(PREP_WIN*2 정도)
                             print("????")
                             self.sync_waypoint_to_y()
+                            
                 
                 if self.reached(wp):
                     if self.do_action(wp):
@@ -411,25 +406,17 @@ class Bot:
 
     def move_toward(self, target_x, action):
 
-        cur_x, cur_y = config.player_pos_ab
+        cur_x = config.player_pos_ab[0]
         dx = target_x - cur_x
-        if action != "ladder":
-        # ladder 모드가 아니면 가드 리셋
-            self._ladder_guard_y = None
+
         if action == "ladder":
-            if self._ladder_guard_y is None:
-                self._ladder_guard_y = cur_y
-            else:
-                # ▼ 접근 중 낙하 감지: y 증가(아래로 하강) 폭이 tol 초과
-                if (cur_y - self._ladder_guard_y) > self._ladder_fall_tol:
-                    self._on_ladder_fall("approach")
             # 사다리용 접근 파라미터
             PREP_WIN = 6      # 이 이하로 가까워지면 감속/탭 이동
             SNAP_TOL = 0      # x 정렬 허용 오차
             ATTACH_WIN = 2    # 이 이하로 가까우면 즉시 부착 시도
 
-            # 공격키 해제(밀림 방지)
-            self._ensure_key('z', 'z_down', False)
+            # # 공격키 해제(밀림 방지)
+            # self._ensure_key('z', 'z_down', False)
 
             # 1) 멀면 일반 이동
             if dx < -PREP_WIN:
@@ -594,11 +581,6 @@ class Bot:
             time.sleep(0.02)
             self.is_climbing = True
             self._no_attack_until = time.time() + 0.30
-
-            # ▼ 등반 중 낙하 감지 기준 y
-            start_pos = config.player_pos_ab
-            start_cy = start_pos[1] if start_pos else None
-
             try:
                 target_y  = wp.end_y if wp else None
                 prev_cy   = None
@@ -618,20 +600,12 @@ class Bot:
                         time.sleep(0.5)
                         success = True
                         break
-                    
-                   # ▼ 등반 중 낙하(y 증가) 감지
-                    if start_cy is not None and (cy - start_cy) > self._ladder_fall_tol:
-                        self._on_ladder_fall("climb")
-                        return False
+                    # if cy - target_y > 4 :
+                    #     print("떨어짐")
+                    #     break
+
 
                     # y 변화 감시(정체 체크)
-                    # 목표 y 도달?
-                    if target_y is not None and cy <= target_y:
-                        time.sleep(0.5)
-                        success = True
-                        break
-
-                    # y 변화 감시(정체)
                     if prev_cy is None or abs(cy - prev_cy) > 1:
                         prev_cy = cy
                         stall_t = time.time()
@@ -645,7 +619,7 @@ class Bot:
                 self._ensure_key('up',  'up_down', False)
                 self.is_climbing = False
                 self._no_attack_until = time.time() + 0.25
-                self._ladder_guard_y = None  # ▼ 접근 가드 리셋
+
                 time.sleep(0.25)
                 if self.left_down == False and self.right_down == False and self.prev_direction != '':
                         print(f'self.prev_direction : {self.prev_direction}')
