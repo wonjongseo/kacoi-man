@@ -57,7 +57,9 @@ class Listener:
         print(f"[Listener] buffs reloaded: {len(self._buff_tasks)} task(s)")
 
     def start(self):
-        """Starts listening to user inputs + buff scheduler."""
+        if self.ready:
+            return  # 이미 시작됨
+    
         print('\n[~] Started keyboard listener')
         self._alive.set()
         # 최신 설정 반영
@@ -74,8 +76,6 @@ class Listener:
             self._cv.notify_all()
         if self._buff_thread.is_alive():
             self._buff_thread.join(timeout=timeout)
-        # 키 리스너 스레드는 루프가 while True라 별도 처리 없으면 계속 돎
-        # 필요하면 enabled 플래그를 내려 루프 break 처리로 고치세요.
 
     def _main(self):
         """Constantly listens for user inputs and updates variables in config accordingly."""
@@ -148,7 +148,7 @@ class Listener:
             self._cv.notify_all()
 
     def _buff_loop(self):
-        """별도 스레드: 버프 스케줄링/시전."""
+        """버프 스케줄링/시전 루프 (shutdown_evt + Condition 기반)."""
         while self._alive.is_set():
             with self._cv:
                 if not self._buff_tasks:
@@ -162,12 +162,12 @@ class Listener:
             if not self._alive.is_set():
                 break
 
-            # 봇이 켜져 있을 때만 버프 사용 시작
+            # 3) 봇이 꺼져있다면 대기
             if not config.enabled:
                 time.sleep(0.2)
                 continue
 
-            # ① 전투 중이면 버프 잠시 중지
+            # 4) 전투 중이면 지연
             try:
                 if getattr(config, "bot", None) and getattr(config.bot, "found_monster", False):
                     time.sleep(0.2)
@@ -176,16 +176,11 @@ class Listener:
                 pass
 
             now = time.time()
-
-            # ② 최소 1초 간격 유지: 마지막 발사로부터 1초 안 지났으면 기다림
             since = now - self._last_cast_ts
             if since < 1.0:
                 time.sleep(1.0 - since)
-                # 다시 조건 확인 후 진행
                 continue
 
-            # ③ 만기된 태스크 중 하나만 발사 (여러 개가 동시에 due여도
-            #    전역 1초 간격 때문에 자연스레 시차가 생김)
             fired = False
             for t in self._buff_tasks:
                 if t.next_at <= time.time():

@@ -5,7 +5,7 @@
   "hp_key": "del",
   "mp_key": "end",
   "jump_key": "alt",
-  "attack_key": "a",
+  "attack_key": "shift",
   "attack_range": {
     "front": 330,
     "back": 0,

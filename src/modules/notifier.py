@@ -30,7 +30,7 @@ class Notifier:
 
     def __init__(self):
         """Initializes this Notifier object's main thread."""
-
+        config.notifier = self
         pygame.mixer.init()
         self.mixer = pygame.mixer.music
 
@@ -111,7 +111,7 @@ class Notifier:
         self.mixer.load(get_alert_path(name))
         self.mixer.set_volume(volume)
         self.mixer.play(-1)
-        while not kb.is_pressed(config.listener.config['Start/stop']):
+        while not kb.is_pressed("f9"):
             time.sleep(0.1)
         self.mixer.stop()
         time.sleep(2)

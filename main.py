@@ -140,4 +140,4 @@ if default_routine:
 gui.start()
 
 
-# pyinstaller main.py --onefile --noconsole  --add-data "assets;assets"
+# fpyinstaller main.py --onefile --noconsole  --add-data "assets;assets"

@@ -147,7 +147,38 @@ class Capture:
         while True:
             self.roop_screen()
             time.sleep(0.001)
-    
+        # --- NEW: 템플릿 매칭 헬퍼 (몬스터 유무만 빠르게 판단) ---
+    def _has_monster(self, gray_area, templates, threshold=0.7):
+        if gray_area is None or gray_area.size == 0:
+            return False
+        h_img, w_img = gray_area.shape[:2]
+        for tpl in templates:
+            h_tpl, w_tpl = tpl.shape[:2]
+            if h_img < h_tpl or w_img < w_tpl:
+                continue
+            res = cv2.matchTemplate(gray_area, tpl, cv2.TM_CCOEFF_NORMED)
+            if np.any(res >= threshold):
+                return True
+        return False
+
+    # --- NEW: 바라보는 방향 전환 (키업/키다운 + 봇 상태 동기화) ---
+    def _face(self, to_dir: str):
+        bot = getattr(config, 'bot', None)
+        if not bot:
+            return
+        if to_dir == 'left':
+            # 오른쪽 키 해제, 왼쪽 키 누름
+            if bot.right_down:
+                pyautogui.keyUp('right'); bot.right_down = False
+            if not bot.left_down:
+                pyautogui.keyDown('left'); bot.left_down = True
+        elif to_dir == 'right':
+            # 왼쪽 키 해제, 오른쪽 키 누름
+            if bot.left_down:
+                pyautogui.keyUp('left'); bot.left_down = False
+            if not bot.right_down:
+                pyautogui.keyDown('right'); bot.right_down = True
+
     def roop_screen(self):
         handle = user32.FindWindowW(None, config.TITLE)
         rect = wintypes.RECT()
@@ -245,44 +276,73 @@ class Capture:
                     # x1, x2, y1, y2 = map(int, (x1, x2, y1, y2))
                     H, W = self.frame.shape[:2]
 
-                    if config.bot.left_down and not config.bot.right_down:
-                        x1, x2 = px - front, px + back
-                    elif config.bot.right_down and not config.bot.left_down:
-                        x1, x2 = px - back,  px + front
+                    facing_left  = (config.bot.left_down  and not config.bot.right_down)
+                    facing_right = (config.bot.right_down and not config.bot.left_down)
+
+                    if not (facing_left or facing_right):
+                        # 양쪽 다 누르거나, 아무 방향도 아닐 때는 스킵
+                        config.bot.found_monster = False
+                        return
+
+                    def rects(px, py, front, back, up, down, facing_left):
+                        # (x1, y1, x2, y2) 반환
+                        if facing_left:
+                            front_rect = (px - front, px + back,  py - up, py + down)   # 왼쪽이 '앞'
+                            back_rect  = (px - back,  px + front, py - up, py + down)   # 오른쪽이 '뒤'
+                        else:
+                            front_rect = (px - back,  px + front, py - up, py + down)   # 오른쪽이 '앞'
+                            back_rect  = (px - front, px + back,  py - up, py + down)   # 왼쪽이 '뒤'
+                        return front_rect, back_rect
+
+                    def clamp(x1, y1, x2, y2, W, H):
+                        x1 = max(0, int(x1)); y1 = max(0, int(y1))
+                        x2 = min(W, int(x2)); y2 = min(H, int(y2))
+                        return x1, y1, x2, y2
+
+                    # 앞/뒤 영역 산출 + 클램프
+                    front_rect, back_rect = rects(px, py, front, back, up, down, facing_left)
+                    fx1, fy1, fx2, fy2 = clamp(front_rect[0], front_rect[2], front_rect[1], front_rect[3], W, H)
+                    bx1, by1, bx2, by2 = clamp(back_rect[0],  back_rect[2],  back_rect[1],  back_rect[3],  W, H)
+
+                    # ROI 추출 (BGRA → GRAY)
+                    front_roi = self.frame[fy1:fy2, fx1:fx2]
+                    back_roi  = self.frame[by1:by2, bx1:bx2]
+
+                    if front_roi.size != 0:
+                        front_gray = cv2.cvtColor(front_roi, cv2.COLOR_BGRA2GRAY)
+                    else:
+                        front_gray = None
+
+                    if back_roi.size != 0:
+                        back_gray = cv2.cvtColor(back_roi, cv2.COLOR_BGRA2GRAY)
+                    else:
+                        back_gray = None
+
+                    # --- 핵심 변경: 뒤 먼저 검사 → 있으면 뒤돌아서 공격 ---
+                    back_found  = self._has_monster(back_gray,  MONSTER_TEMPLATES, threshold=0.7)
+                    front_found = self._has_monster(front_gray, MONSTER_TEMPLATES, threshold=0.7)
+
+                    if back_found:
+                        # 방향 전환 후 공격
+                        self._face('right' if facing_left else 'left')
+                        config.bot.found_monster = True
+                        utils.capture_minimap(bx1, by1, bx2, by2)
+
+                        # (선택) 여기서 바로 공격키를 누르고 싶다면 주석 해제
+                        # pyautogui.keyDown('z'); time.sleep(0.05); pyautogui.keyUp('z')
+
+                    elif front_found:
+                        # 현재 방향 유지하고 공격
+                        config.bot.found_monster = True
+                        utils.capture_minimap(fx1, fy1, fx2, fy2)
+
+                        # (선택) 즉시 공격:
+                        # pyautogui.keyDown('z'); time.sleep(0.05); pyautogui.keyUp('z')
+
                     else:
                         config.bot.found_monster = False
-                        return  # 또는 continue
 
-                    y1, y2 = py - up, py + down
-
-                    # 경계 클램프 + 정수화
-                    x1 = max(0, int(x1)); y1 = max(0, int(y1))
-                    x2 = min(W, int(x2)); y2 = min(H, int(y2))
-
-                    # 영역 검증
-                    if x2 <= x1 or y2 <= y1:
-                        return  # 또는 continue
-
-                    attack_area = self.frame[y1:y2, x1:x2]
-                    if attack_area.size == 0:
-                        continue 
-                    gray_area = cv2.cvtColor(attack_area, cv2.COLOR_BGRA2GRAY)
-                    
-                    for tpl in MONSTER_TEMPLATES:
-                        h_img, w_img = gray_area.shape
-                        h_tpl, w_tpl = tpl.shape
-
-                        # 템플릿이 더 크면 스킵
-                        if h_img < h_tpl or w_img < w_tpl:
-                            continue
-
-                        res = cv2.matchTemplate(gray_area, tpl, cv2.TM_CCOEFF_NORMED)
-                        if np.any(res >= 0.7):
-                            config.bot.found_monster = True
-                            utils.capture_minimap(x1, y1 , x2,  y2)
-                            break
-                        else:
-                            config.bot.found_monster = False
+                    time.sleep(0.001)
                         
 
                 time.sleep(0.001)

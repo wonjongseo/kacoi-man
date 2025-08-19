@@ -1,9 +1,9 @@
 [
 {"x": 146,  "y" : 98 ,"action" : "move"},
-{"x": 116, "y" :   102 ,"action" : "jump",  "count": 1},
-{"x": 66, "y" :   102 ,"action" : "jump",  "count": 1},
+{"x": 116, "y" :   102 ,"action" : "jump",  "count": 1, "in_place" : false},
+{"x": 66, "y" :   102 ,"action" : "jump",  "count": 1, "in_place" : false},
 {"x": 38, "y" :   98 ,"action" : "move"},
-{"x": 78, "y" : 102 ,"action" : "jump",  "count": 1},
-{"x": 128, "y" :  102 ,"action" : "jump",  "count": 1},
+{"x": 78, "y" : 102 ,"action" : "jump",  "count": 1, "in_place" : false},
+{"x": 128, "y" :  102 ,"action" : "jump",  "count": 1, "in_place" : false},
 {"x": 147, "y" :  98 ,"action" : "move"}
 ]

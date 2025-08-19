@@ -14,7 +14,6 @@ import src.datas.setting_data as sd
 from  src.common  import config, default_value as dv, utils
 
 
-
 def add_placeholder(entry, placeholder):
         def on_focus_in(event):
             if entry.get() == placeholder:
@@ -171,20 +170,6 @@ class Settings(Tab):
         ttk.Button(frm_tmpl, text="찾기", command=lambda: self._browse_png(self.var_chr_mp))\
             .grid(row=4, column=5, padx=(0,8))
 
-       
-        
-        # add_placeholder(entry, placeholder="필수 값입니다.")
-        
-        # -- 기타 --
-        # ttk.Label(frm_tmpl, text="-- 기타 --").grid(row=6, column=0, columnspan=5,
-        #                                             sticky="w", padx=8, pady=(10,4))
-
-        # ttk.Label(frm_tmpl, text="부활메세지 이미지").grid(row=7, column=0, sticky="w", padx=8)
-        # ttk.Entry(frm_tmpl, textvariable=self.var_misc_revive)\
-        #     .grid(row=7, column=1, sticky="ew", padx=(0,4))
-        # ttk.Button(frm_tmpl, text="찾기",
-        #         command=lambda: self._browse_png(self.var_misc_revive))\
-        #     .grid(row=7, column=2, padx=(0,8))
     def _create_buff_feild(self, row_index) :
         # ── 버프 ── (포션 사용 임계치 바로 아래)
         # __init__ 내, 포션/공격사거리 아래 적당한 위치에 배치
@@ -268,20 +253,21 @@ class Settings(Tab):
 
         btns = ttk.Frame(self,padding=10)
         btns.grid(row=0, column=0, sticky="ew")
-        ttk.Button(btns, text="✅ 적용", command=self._apply).grid(row=0, column=1, padx=(0,6), pady=(0,6))
-        ttk.Button(btns, text="💾 저장", command=self._save_json).grid(row=0, column=2, padx=6,      pady=(0,6))
-        ttk.Button(btns, text="📂 불러오기", command=self._load_json).grid(row=0, column=3, padx=6,      pady=(0,6))
-        ttk.Button(btns, text="초기화", command=self._reset).grid(row=0, column=4, padx=(6,0),  pady=(0,6))
+        self.btn_apply = ttk.Button(btns, text="✅ 적용", command=self._apply)
+        self.btn_save  = ttk.Button(btns, text="💾 저장", command=self._save_json)
+        self.btn_load  = ttk.Button(btns, text="📂 불러오기", command=self._load_json)
+        self.btn_reset = ttk.Button(btns, text="초기화", command=self._reset)
 
+        self.btn_apply.grid(row=0, column=1, padx=(0,6), pady=(0,6))
+        self.btn_save.grid (row=0, column=2, padx=6,      pady=(0,6))
+        self.btn_load.grid (row=0, column=3, padx=6,      pady=(0,6))
+        self.btn_reset.grid(row=0, column=4, padx=(6,0),  pady=(0,6))
 
         self._create_required_feild(1)
         self._create_template_images_feild(2)
         self._create_attack_range_feild(3)
         self._create_potion_feild(4)
         self._create_buff_feild(5)
-
-    
-    
     def get_config(self) -> sd.SettingsConfig:
         cfg = sd.SettingsConfig(
             monster_dir=self.var_monster_dir.get().strip(),

@@ -14,6 +14,9 @@ class ActionItem:
     duration: Optional[int] = None  # wait 전용
     count: Optional[int] = None     # jump 전용
     in_place : Optional[bool] = None
+    # in_place_delay: Optional[float] = None
+    # jump_pause: bool = False
+    # jump_pause_delay: Optional[float] = None
 
     # ── 유효성 검사 ───────────────────────────────────────────────
     def validate(self) -> None:
@@ -31,6 +34,11 @@ class ActionItem:
         elif self.action == "jump":
             if self.count is None:
                 raise ValueError("jump requires count")
+            # if self.action == "jump":
+            #     if self.in_place and (self.in_place_delay is None or float(self.in_place_delay) < 0):
+            #         raise ValueError("제자리 점프 딜레이(초)가 올바르지 않습니다.")
+            #     if self.jump_pause and (self.jump_pause_delay is None or float(self.jump_pause_delay) < 0):
+            #         raise ValueError("점프 후 일시정지 딜레이(초)가 올바르지 않습니다.")
             self.end_y = None; self.duration = None
         else:  # move
             self.end_y = None; self.duration = None; self.count = None
@@ -51,6 +59,9 @@ class ActionItem:
             duration=d.get("duration"),
             count=d.get("count"),
             in_place=d.get("in_place"),
+            # in_place_delay=d.get("in_place_delay"),
+            # jump_pause=d.get("jump_pause"),
+            # jump_pause_delay=d.get("jump_pause_delay"),
         )
         item.validate()
         return item

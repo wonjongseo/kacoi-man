@@ -23,6 +23,7 @@ enabled = False
 # Represents the current shortest path that the bot is taking
 path = []
 
+appear_other = False
 
 setting_data = None
 routine = None
@@ -44,6 +45,7 @@ capture = None
 # Shares the keyboard listener
 listener = None
 
+notifier = None
 # Shares the gui to all modules
 gui = None
 
