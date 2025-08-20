@@ -17,10 +17,7 @@ class RoutePatrol:
         config.gui.monitor.refresh_routine(current_index = self.index)
 
 
-
 class Bot:
-
-
     def __init__(self):
         config.bot = self
 
@@ -50,7 +47,6 @@ class Bot:
         self._last_attack_t = 0.0         # 최근 공격 시각(연타 속도 제한)
         self._attack_interval = 0.18      # 공격 최소 간격(초)
 
-
         self.stuck_attack_cnt = 0
         self.prev_char_pos    = None
         self.prev_action = ''
@@ -67,7 +63,23 @@ class Bot:
         self._fm_cooldown = 0.6       # 강제 이동 후 쿨다운(초)
         self._fm_use_jump = True      # True면 점프-대시(Alt+방향), False면 걷기만
         self._fm_last_exec_t = 0.0
+
+        self.monster_dir = None
+        self._last_turn_t = 0.0
+        self._turn_interval = 0.15  # 연속 회전 방지 최소 간격(초)
     
+    def _face_only(self, to_dir: str):
+        """공격키/기타키 건드리지 않고 '방향키'만 정리해서 바라보게 함"""
+        if to_dir == 'left':
+            self._ensure_key('right', 'right_down', False)
+            self._ensure_key('left',  'left_down',  True)
+            time.sleep(0.2)
+            self.prev_direction = 'left'
+        else:
+            self._ensure_key('left',  'left_down',  False)
+            self._ensure_key('right', 'right_down', True)
+            self.prev_direction = 'right'
+            
     def _fm_reset(self):
         """강제 이동 스턱 상태 리셋"""
         self._fm_stuck_since = None
@@ -163,7 +175,6 @@ class Bot:
         # 정상 이동 중이면 리셋
         self._fm_reset()
         return False
-
 
     
     def _refresh_can_attack(self, act, dx_abs):
@@ -278,47 +289,67 @@ class Bot:
             time.sleep(step_ms); 
             self._ensure_key('right', 'right_down', False); 
 
+    def stop(self):
+        if config.macro_shutdown_evt:
+            config.macro_shutdown_evt.set()
+        # 필요시 조인
+        # if self.thread and self.thread.is_alive():
+        #     self.thread.join(timeout=2)
+
     def _main(self):
         self.ready = True
         
-        while True:
+        while not (config.macro_shutdown_evt and config.macro_shutdown_evt.is_set()):
             try : 
                 if config.enabled is False:
                     time.sleep(0.001)
                     continue
 
-                    
                 if self.found_monster :
+
+                    self.monster_dir = getattr(self, 'monster_dir', None)
+                    now = time.time()
+                    if self.monster_dir == 'back' and (now - self._last_turn_t) >= self._turn_interval:
+                        # 현재 바라보는 반대쪽으로 한 번만 돌기
+                        if self.right_down and not self.left_down:
+                            self._face_only('left')
+                        elif self.left_down and not self.right_down:
+                            self._face_only('right')
+                        else:
+                            continue
+                        self._last_turn_t = now
+                        
+                        # 회전 후 바로 공격 유지
+
                     self._ensure_key('z', 'z_down', False); 
                     self._ensure_key(self.attack_key, 'shift_down', True); 
 
-                    if self.prev_char_pos and config.player_pos_ab:
-                        dif = math.hypot(config.player_pos_ab[0]-self.prev_char_pos[0],
-                                    config.player_pos_ab[1]-self.prev_char_pos[1])
-                        if dif < 3:
-                            self.stuck_attack_cnt += 1
-                        else:
-                            self.stuck_attack_cnt = 1
-                    else:
-                        self.stuck_attack_cnt = 1
+                    # if self.prev_char_pos and config.player_pos_ab:
+                    #     dif = math.hypot(config.player_pos_ab[0]-self.prev_char_pos[0],
+                    #                 config.player_pos_ab[1]-self.prev_char_pos[1])
+                    #     if dif < 3:
+                    #         self.stuck_attack_cnt += 1
+                    #     else:
+                    #         self.stuck_attack_cnt = 1
+                    # else:
+                    #     self.stuck_attack_cnt = 1
                     
-                    self.prev_char_pos = config.player_pos_ab
+                    # self.prev_char_pos = config.player_pos_ab
                     
-                    if self.stuck_attack_cnt >= 10:
-                        print("[INFO] 같은 자리 10회 공격 → 강제 이동")
-                        self.release_all_keys()
-                        self.sync_direction()
-                        pyautogui.press(self.jump_key)
-                        self.sync_waypoint_to_y()
-                        self.stuck_attack_cnt = 0
-                        time.sleep(0.1)
-                        continue     
+                    # if self.stuck_attack_cnt >= 10:
+                    #     print("[INFO] 같은 자리 10회 공격 → 강제 이동")
+                    #     self.release_all_keys()
+                    #     self.sync_direction()
+                    #     pyautogui.press(self.jump_key)
+                    #     self.sync_waypoint_to_y()
+                    #     self.stuck_attack_cnt = 0
+                    #     time.sleep(0.1)
+                    #     continue     
                     time.sleep(0.1)
                         
                 else:
                     self.stuck_attack_cnt = 0
                     self._ensure_key(self.attack_key, 'shift_down', False); 
-                    # self._ensure_key('z', 'z_down', True); 
                     
                     wp = config.routine.current_wp()
                     target_x, target_y, act = wp.x, wp.y, wp.action
@@ -358,7 +389,6 @@ class Bot:
                     else:
                         self.move_toward(target_x, act)
                         triggered = self._probe_stuck_and_jump()
-                        print(f'triggered : {triggered}')
                         
                         if not triggered:
                             self._probe_stuck_and_force_move()
@@ -370,6 +400,7 @@ class Bot:
                 pyautogui.FAILSAFE = False
                 try:
                     self.release_all_keys()
+                    pyautogui.moveTo(config.SCREEN_WIDTH, config.SCREEN_HEIGHT)
                 finally:
                     pyautogui.FAILSAFE = True     # 2) 다시 켜 주기
                 time.sleep(1)  
@@ -478,6 +509,7 @@ class Bot:
         
         if best_i != config.routine.index:
             config.routine.index = best_i
+            config.gui.monitor.refresh_routine(best_i)
             print(f"[INFO] WP 재동기화(Y 기준) → #{best_i+1} (x:{cx}, y:{cy})")
     
     def reached(self, wp):
@@ -538,7 +570,15 @@ class Bot:
             # 0) x 미세 정렬(안전장치)
             success = False
             target_x = wp.x
+            
             while True:
+                while self.found_monster :
+                    self._ensure_key('z', 'z_down', False); 
+                    self._ensure_key(self.attack_key, 'shift_down', True); 
+                
+                self._ensure_key(self.attack_key, 'shift_down', False); 
+
+
                 cx, _ = config.player_pos_ab
                 if abs(cx - target_x) == 0:
                     break

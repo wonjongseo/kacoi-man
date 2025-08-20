@@ -68,9 +68,14 @@ class Listener:
         self.thread.start()
         self._buff_thread.start()
         self.ready = True
-
-    # (선택) 정리용. 있으면 더 안전.
+    
     def stop(self, timeout=2.0):
+        if config.macro_shutdown_evt:
+            config.macro_shutdown_evt.set()
+
+        # if self.thread and self.thread.is_alive():
+        #     self.thread.join(timeout=2)
+            
         self._alive.clear()
         with self._cv:
             self._cv.notify_all()
@@ -80,7 +85,7 @@ class Listener:
     def _main(self):
         """Constantly listens for user inputs and updates variables in config accordingly."""
         self.ready = True
-        while True:
+        while not (config.macro_shutdown_evt and config.macro_shutdown_evt.is_set()):
             try:
                 if self.enabled:
                     if kb.is_pressed('f9'):
@@ -119,6 +124,7 @@ class Listener:
         config.enabled = not config.enabled
         if config.enabled:
             handle_windows.activate_window(config.TITLE)
+            config.gui.monitor.refresh_routine()
             # ── 봇 on 되는 시점에 버프 스케줄을 '지금부터' 시작하도록 next_at 초기화
             try:
                 if getattr(config, "listener", None):
@@ -169,9 +175,14 @@ class Listener:
 
             # 4) 전투 중이면 지연
             try:
-                if getattr(config, "bot", None) and getattr(config.bot, "found_monster", False):
+                while config.bot.shift_down :
+                    print("전투중")
                     time.sleep(0.2)
                     continue
+                # if config.bot.shift_down == True: #  getattr(config, "bot", None) and getattr(config.bot, "found_monster", False):
+                #     print("전투중")
+                #     time.sleep(0.2)
+                #     continue
             except Exception:
                 pass
 

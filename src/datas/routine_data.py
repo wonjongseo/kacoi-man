@@ -2,7 +2,7 @@
 from dataclasses import dataclass, asdict
 from typing import Optional, Literal, List, Dict, Any
 
-ActionType = Literal["move", "jump", "wait", "ladder"]
+ActionType = Literal["move", "jump", "ladder"]
 
 @dataclass
 class ActionItem:
@@ -20,7 +20,7 @@ class ActionItem:
 
     # ── 유효성 검사 ───────────────────────────────────────────────
     def validate(self) -> None:
-        if self.action not in ("move","jump","wait","ladder"):
+        if self.action not in ("move","jump","ladder"):
             raise ValueError("action must be one of move/jump/wait/ladder")
         # 액션별 필드 강제
         if self.action == "ladder":

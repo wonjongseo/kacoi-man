@@ -5,7 +5,7 @@ from src.gui.monitor.minimap import Minimap
 from src.gui.interfaces import Tab
 
 
-ACTIONS = ("move", "jump", "wait", "ladder")
+ACTIONS = ("move", "jump", "ladder")
 
 class ActionForm(ttk.Frame):
     """오른쪽 입력 폼: 공통(x,y,action) + 액션별 필드(조건부)."""
@@ -41,17 +41,18 @@ class ActionForm(ttk.Frame):
         self.cb_action.grid(row=0, column=1, sticky="ew", pady=(0,6))
         self.cb_action.bind("<<ComboboxSelected>>", self._on_action_change)
 
-        ttk.Label(self, text="x").grid(row=1, column=0, sticky="w")
+        ttk.Label(self, text='현재 캐릭터 위치 가져오기 (f8)').grid(row=1, column=1, sticky='e')
+        ttk.Label(self, text="x").grid(row=2, column=0, sticky="w")
         self.ent_x = ttk.Entry(self, textvariable=self.var_x)
-        self.ent_x.grid(row=1, column=1, sticky="ew", pady=2)
+        self.ent_x.grid(row=2, column=1, sticky="ew", pady=2)
 
-        ttk.Label(self, text="y").grid(row=2, column=0, sticky="w")
+        ttk.Label(self, text="y").grid(row=3, column=0, sticky="w")
         self.ent_y = ttk.Entry(self, textvariable=self.var_y)
-        self.ent_y.grid(row=2, column=1, sticky="ew", pady=2)
+        self.ent_y.grid(row=3, column=1, sticky="ew", pady=2)
 
         # 조건부 컨테이너
         self.conditional = ttk.Frame(self)
-        self.conditional.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(8,4))
+        self.conditional.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(8,4))
         self.conditional.columnconfigure(1, weight=1)
 
         # ladder: end_y
@@ -78,17 +79,17 @@ class ActionForm(ttk.Frame):
         self.row_jump_inplace = ttk.Frame(self.conditional)
         self.chk_inplace = ttk.Checkbutton(
             self.row_jump_inplace, text="제자리 점프", variable=self.var_in_place,
-            command=self._on_jump_flags_change
+            # command=self._on_jump_flags_change
         )
         self.chk_inplace.grid(row=0, column=0, sticky="w")
-        ttk.Label(self.row_jump_inplace, text="일시정지 후 점프 (초)").grid(row=0, column=1, sticky="e", padx=(12,4))
-        self.ent_inplace_delay = ttk.Entry(self.row_jump_inplace, textvariable=self.var_in_place_delay, width=8, justify="right")
-        self.ent_inplace_delay.grid(row=0, column=2, sticky="w")
+        # ttk.Label(self.row_jump_inplace, text="일시정지 후 점프 (초)").grid(row=0, column=1, sticky="e", padx=(12,4))
+        # self.ent_inplace_delay = ttk.Entry(self.row_jump_inplace, textvariable=self.var_in_place_delay, width=8, justify="right")
+        # self.ent_inplace_delay.grid(row=0, column=2, sticky="w")
 
         self.row_jump_pause = ttk.Frame(self.conditional)
         self.chk_jump_pause = ttk.Checkbutton(
             self.row_jump_pause, text="점프하고 일시정지", variable=self.var_jump_pause,
-            command=self._on_jump_flags_change
+            # command=self._on_jump_flags_change
         )
         self.chk_jump_pause.grid(row=0, column=0, sticky='w')
         ttk.Label(self.row_jump_pause, text="점프 후 일시정지 (초)").grid(row=0, column=1, sticky='e', padx=(12,4))
@@ -123,15 +124,15 @@ class ActionForm(ttk.Frame):
             self.var_in_place.set(False)
         
         
-    def _on_jump_flags_change(self, *_):
-        if self.var_in_place.get():
-            self.ent_inplace_delay.configure(state='normal')
-        else:
-            self.ent_inplace_delay.configure(state='disabled')
-        if self.var_jump_pause.get():
-            self.ent_jump_pause_delay.configure(state="normal")
-        else:
-            self.ent_jump_pause_delay.configure(state="disabled")
+    # def _on_jump_flags_change(self, *_):
+    #     if self.var_in_place.get():
+    #         self.ent_inplace_delay.configure(state='normal')
+    #     else:
+    #         self.ent_inplace_delay.configure(state='disabled')
+    #     if self.var_jump_pause.get():
+    #         self.ent_jump_pause_delay.configure(state="normal")
+    #     else:
+    #         self.ent_jump_pause_delay.configure(state="disabled")
     
     def _on_action_change(self, *_):
         # 모든 조건부 숨김
@@ -148,7 +149,7 @@ class ActionForm(ttk.Frame):
             # jump 기본 필드(count)
             self.row_jump.grid(row=0, column=0, sticky="ew")
 
-            # self.row_jump_inplace.grid(row=1, column=0, sticky="ew", pady=(4,0))
+            self.row_jump_inplace.grid(row=1, column=0, sticky="ew", pady=(4,0))
             # self.row_jump_pause.grid(row=2, column=0, sticky="ew", pady=(2,0))
 
             # # 체크 상태에 맞춰 딜레이 입력 활성/비활성
@@ -223,7 +224,7 @@ class ActionForm(ttk.Frame):
         self.var_in_place_delay.set("0.0")
         self.var_jump_pause.set(False)
         self.var_jump_pause_delay.set("0.0")
-        self._on_jump_flags_change()
+        # self._on_jump_flags_change()
 
     def _clear(self):
         self._clear_fields_only()

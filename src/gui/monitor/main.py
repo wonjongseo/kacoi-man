@@ -9,11 +9,9 @@ class Monitor(Tab):
     def __init__(self, parent, **kwargs):
         super().__init__(parent, "모니터", **kwargs)
 
-
         self.grid_columnconfigure(0, weight=1)   # 왼쪽 리스트
         self.grid_columnconfigure(1, weight=0)   # 오른쪽(미니맵/라벨)
         self.grid_rowconfigure(0, weight=1)
-
 
         # ▶ 왼쪽: 루틴 리스트
         left = ttk.Frame(self)
@@ -90,17 +88,17 @@ class Monitor(Tab):
 
 
     # ====== 루틴 트리 갱신 (config.routine 또는 전달된 data 사용) ======
-    def refresh_routine(self, current_index=None):
+    def refresh_routine(self, current_index=0):
         if config.routine == None:
             return
-        
+        print('refresh_routine')
         items = config.routine.items
         self.routine_tree.delete(*self.routine_tree.get_children())
 
         # 하이라이트 색상 태그 정의
         self.routine_tree.tag_configure("highlight", background="#ffe08c")  # 연한 노랑
 
-        for i, d in enumerate(items, start=1):
+        for i, d in enumerate(items, start=0):
             # dataclass(ActionItem)과 dict 모두 지원
             get = (lambda k: getattr(d, k)) if hasattr(d, "__dict__") else (lambda k: d.get(k, ""))
 
@@ -112,9 +110,6 @@ class Monitor(Tab):
                 values=(
                     i,
                     get("action"), get("x"), get("y"),
-                    # ("" if get("end_y")    in (None, "") else get("end_y")),
-                    # ("" if get("duration") in (None, "") else get("duration")),
-                    # ("" if get("count")    in (None, "") else get("count")),
                 ),
                 tags=tags
             )

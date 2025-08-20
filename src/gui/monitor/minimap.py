@@ -58,7 +58,7 @@ class Minimap(LabelFrame):
             return
         
         minimap = config.capture.minimap
-        if not minimap:
+        if not minimap or ('minimap' in minimap is False) :
             return
 
         # ----- 이미지 처리 -----
@@ -83,8 +83,6 @@ class Minimap(LabelFrame):
             x, y = config.player_pos_ab         # (예: (123, 456))
             self.coord_var.set(f"x: {x}, y: {y}")
         except AttributeError:
-            print("AA")
-            # 값이 아직 없으면 그대로 둠
             pass  
 
             

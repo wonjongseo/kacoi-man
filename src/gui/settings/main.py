@@ -74,7 +74,6 @@ class Settings(Tab):
         ttk.Label(frm_attack, text="공격 키").grid(row=0, column=0, sticky="w", padx=(0, 4))
         entry_attack = ttk.Entry(frm_attack, textvariable=self.var_attack_key)
         entry_attack.grid(row=0, column=1, sticky="ew", padx=(0, 8))
-
     def _create_potion_feild(self,row_index):
         # 포션 임계치
         frm_potion = ttk.LabelFrame(self, text="포션 사용 임계치 (%)")
@@ -169,7 +168,6 @@ class Settings(Tab):
             .grid(row=4, column=4, sticky="ew", padx=(0,4))
         ttk.Button(frm_tmpl, text="찾기", command=lambda: self._browse_png(self.var_chr_mp))\
             .grid(row=4, column=5, padx=(0,8))
-
     def _create_buff_feild(self, row_index) :
         # ── 버프 ── (포션 사용 임계치 바로 아래)
         # __init__ 내, 포션/공격사거리 아래 적당한 위치에 배치
@@ -201,7 +199,6 @@ class Settings(Tab):
 
         if len(self._buff_rows) > 4:
             self.add_buff_btn.grid_remove()
-
     def _remove_buff_row(self, row: "_BuffRow"):
         try:
             self._buff_rows.remove(row)
@@ -211,15 +208,14 @@ class Settings(Tab):
             pass
         row.destroy()
         self._reflow_buff_rows()
-
     def _reflow_buff_rows(self):
         # 현재 행들 다시 grid
         for idx, r in enumerate(self._buff_rows):
             r.grid(row=idx)
-
     def __init__(self, parent, **kwargs):
         super().__init__(parent, "Settings" , **kwargs)
 
+        
         self.columnconfigure(0, weight=1)
         # ===== Vars =====
         self.var_jump_key = tk.StringVar(value='alt')
@@ -249,8 +245,6 @@ class Settings(Tab):
 
         self._buff_rows = []  # type: list[_BuffRow]
 
-        # ===== Layout =====
-
         btns = ttk.Frame(self,padding=10)
         btns.grid(row=0, column=0, sticky="ew")
         self.btn_apply = ttk.Button(btns, text="✅ 적용", command=self._apply)
@@ -268,6 +262,64 @@ class Settings(Tab):
         self._create_attack_range_feild(3)
         self._create_potion_feild(4)
         self._create_buff_feild(5)
+
+        self._init_locking_support()
+
+
+    def _init_locking_support(self):
+        """잠글 대상 위젯 수집 + 콤보박스 원래 상태 보관."""
+        # 초기화 버튼은 잠그지 않음(항상 사용 가능)
+        self._lock_whitelist = { self.btn_reset }
+        self._lock_widgets = []
+        self._combobox_default = {}  # Combobox 원래 상태(예: 'readonly')
+
+        def walk(parent):
+            for w in parent.winfo_children():
+                walk(w)
+                # 잠글 대상: Entry/Spinbox/Combobox/Button 등
+                lockable = (
+                    isinstance(w, (ttk.Entry, ttk.Spinbox, ttk.Combobox, ttk.Button))
+                    or w.winfo_class() in ("TEntry", "TSpinbox", "TCombobox", "TButton")
+                )
+                if not lockable:
+                    continue
+                if w in self._lock_whitelist:
+                    continue
+                self._lock_widgets.append(w)
+                # Combobox의 원래 상태 저장 (readonly 복원용)
+                try:
+                    if isinstance(w, ttk.Combobox):
+                        self._combobox_default[w] = w.cget("state")  # 'normal' or 'readonly'
+                except Exception:
+                    pass
+        walk(self)        
+    def _lock_settings(self):
+        """적용 이후: 모든 입력과 버튼(초기화 제외) 비활성화."""
+        for w in self._lock_widgets:
+            try:
+                if isinstance(w, ttk.Combobox):
+                    w.configure(state="disabled")
+                else:
+                    w.configure(state="disabled")
+            except Exception:
+                # 일부 기본 tk 위젯 호환
+                try: w['state'] = 'disabled'
+                except Exception: pass
+
+    def _unlock_settings(self):
+        """초기화 이후: 입력/버튼 원복."""
+        for w in self._lock_widgets:
+            try:
+                if isinstance(w, ttk.Combobox):
+                    # 원래 combobox 상태로 복원 (예: 'readonly')
+                    state = self._combobox_default.get(w, "normal")
+                    w.configure(state=state)
+                else:
+                    w.configure(state="normal")
+            except Exception:
+                try: w['state'] = 'normal'
+                except Exception: pass
+
     def get_config(self) -> sd.SettingsConfig:
         cfg = sd.SettingsConfig(
             monster_dir=self.var_monster_dir.get().strip(),
@@ -303,7 +355,6 @@ class Settings(Tab):
             
         )
         return cfg
-
     def set_config(self, cfg):
         if isinstance(cfg, dict):
             cfg = sd.SettingsConfig.from_dict(cfg)
@@ -339,10 +390,8 @@ class Settings(Tab):
         self._buff_rows.clear()
         for b in (cfg.buffs or []):
             self._add_buff_row(b)
-
     def to_json_str(self) -> str:
         return json.dumps(self.get_config().to_dict(), ensure_ascii=False, indent=2)
-
     # ========= Internals =========
     def _browse_dir(self, var: tk.StringVar):
         path = filedialog.askdirectory(title="폴더 선택")
@@ -354,7 +403,6 @@ class Settings(Tab):
             filetypes=[("PNG files","*.png"),("All files","*.*")]
         )
         if path: var.set(path)
-
     def _png_or_empty(self, p: str) -> str:
         p = (p or "").strip()
         if not p:
@@ -363,7 +411,6 @@ class Settings(Tab):
         if os.path.splitext(p)[1].lower() != ".png":
             messagebox.showwarning("확인", f"PNG 파일이 아닐 수 있습니다:\n{p}")
         return p
-
     def _save_json(self):
         path = filedialog.asksaveasfilename(
             title="설정을 JSON으로 저장",
@@ -377,7 +424,6 @@ class Settings(Tab):
             messagebox.showinfo("저장 완료", f"저장됨:\n{path}")
         except Exception as e:
             messagebox.showerror("저장 실패", str(e))
-
     def _load_json(self):
         path = filedialog.askopenfilename(
             title="설정 JSON 불러오기",
@@ -412,8 +458,6 @@ class Settings(Tab):
         
         for v in (self.var_mm_tl, self.var_mm_br, self.var_mm_me, self.var_mm_other, self.var_chr_hp, self.var_chr_mp, self.var_chr_name):
             v.set("")
-
-    
     def _apply(self, show_msg = True):
         cfg = self.get_config()
         
@@ -435,7 +479,7 @@ class Settings(Tab):
         elif cfg.attack_key == "":
             messagebox.showwarning("필수", "공격 키 입력 후 적용해주세요.")
             return
-        if show_msg:
+        if show_msg and config.macro_thread == None and config.macro_thread.is_alive() == False:
             messagebox.showinfo("적용됨", "설정이 적용되었습니다.")
         config.setting_data = cfg
         config.gui.monitor.refresh_routine()
@@ -443,48 +487,154 @@ class Settings(Tab):
         self.start_bot()
     
     def start_bot(self):
-        threading.Thread(target=self._start_modules_thread, daemon=True).start()
+        """최초 시작 또는 재시작 버튼 핸들러(메인 스레드에서 호출)."""
+        # 이미 실행 중이면 먼저 정지
+        if config.macro_thread and config.macro_thread.is_alive():
+            self._stop_bot_thread()
 
-    def _start_modules_thread(self):
+        # 새로운 종료 이벤트 생성
+        config.macro_shutdown_evt = threading.Event()
+
+        # 새 스레드 생성 후 시작 (스레드 객체를 변수에 저장하고, 그 다음 .start())
+        t = threading.Thread(
+            target=self._start_modules_thread,
+            daemon=True,
+            name="MacroController",
+        )
+        config.macro_thread = t
+        t.start()
+    def stop_bot(self):
+        """정지 버튼이 따로 있다면 이걸 호출."""
+        self._stop_bot_thread()
+    
+    def _show_stopping_dialog(self):
+        print("_show_stopping_dialog")
+        if getattr(self, "_stop_dlg", None):
+            return
+        import tkinter as tk
+        from tkinter import ttk
+        dlg = tk.Toplevel(self)
+        dlg.title("중지 중…")
+        dlg.geometry("280x100+200+200")
+        dlg.transient(self)
+        dlg.grab_set()  # 선택: 모달처럼
+        ttk.Label(dlg, text="모듈을 정리하는 중입니다…").pack(pady=10)
+        pb = ttk.Progressbar(dlg, mode="indeterminate")
+        pb.pack(fill="x", padx=16, pady=8)
+        pb.start(12)
+        self._stop_dlg = (dlg, pb)
+
+    def _hide_stopping_dialog(self):
+        dlg_pair = getattr(self, "_stop_dlg", None)
+        if not dlg_pair:
+            return
+        dlg, pb = dlg_pair
         try:
+            pb.stop()
+            dlg.grab_release()
+            dlg.destroy()
+        except Exception:
+            pass
+        self._stop_dlg = None
+
+    
+    def _stop_bot_thread(self):
+        """실행 중인 컨트롤러/모듈을 정리하고 스레드를 종료."""
+
+        evt = config.macro_shutdown_evt
+        if evt:
+            evt.set()  # 종료 신호 전파
+
+        # 각 모듈에 stop()이 있다면 호출 (없으면 무시)
+        for m in (config.listener, config.bot, config.capture, config.notifier):
+            try:
+                if m and hasattr(m, 'stop'):
+                    m.stop()
+            except Exception as e:
+                print(f"[WARN] stop() 실패: {m}: {e}")
+
+        # 컨트롤러 스레드 합류 대기 (최대 5초)
+        t = config.macro_thread
+        if t and t.is_alive():
+            t.join(timeout=5)
+
+        # 레퍼런스 정리
+        config.macro_thread = None
+        config.macro_shutdown_evt = None
+        config.bot = config.capture = config.listener = config.notifier = None
+
+        # UI는 메인 스레드에서
+        
+        self.after(0, lambda: messagebox.showinfo("중지", "모듈을 중지했습니다."))
+
+    
+    def _start_modules_thread(self):
+        """모듈을 순서대로 시작하고, 종료 이벤트가 올 때까지 생명주기를 관리."""
+        try:
+            shutdown_evt = config.macro_shutdown_evt
+            self.after(0, self._show_stopping_dialog)
+
             # 인스턴스 생성 + 전역 등록
-            config.bot = Bot()
-            config.capture = Capture()         # ← 주입 안 함
+            config.bot = Bot()      # ← 없다면 생성 후 속성으로 주입
+            config.capture = Capture()
             config.notifier = Notifier()
             config.listener = Listener()
 
-            # 순서대로 시작 + 준비 대기 (백그라운드에서만 sleep)
+            # 시작 + 준비 대기
             config.capture.start()
-            if not self._wait(lambda: config.capture.ready, 10):  # 타임아웃 권장
+            if not self._wait(lambda: config.capture.ready, 10, shutdown_evt):
                 return self._fail("Capture가 준비되지 않습니다.")
 
             config.bot.start()
-            if not self._wait(lambda: config.bot.ready, 5):
+            if not self._wait(lambda: config.bot.ready, 5, shutdown_evt):
                 return self._fail("Bot이 준비되지 않습니다.")
 
             config.listener.start()
-            if not self._wait(lambda: config.listener.ready, 5):
+            if not self._wait(lambda: config.listener.ready, 5, shutdown_evt):
                 return self._fail("Listener가 준비되지 않습니다.")
 
             config.notifier.start()
-            if not self._wait(lambda: config.notifier.ready, 5):
+            if not self._wait(lambda: config.notifier.ready, 5, shutdown_evt):
                 return self._fail("Notifier가 준비되지 않습니다.")
 
             # 메인스레드로 UI 알림
-            self.after(0, lambda: messagebox.showinfo("시작", "모듈이 모두 준비되었습니다."))
+            self.after(0, lambda: messagebox.showinfo("시작", "모듈이 모두 준비되었습니다.\n f9를 눌러서 시작/일시 정지 할 수 있습니다."))
+            self.after(0, self._hide_stopping_dialog)
+            # 종료 신호가 올 때까지 대기 (컨트롤러 스레드의 생명 유지)
+            while not shutdown_evt.is_set():
+                time.sleep(0.2)
 
         except Exception as e:
+            print(f"[ERROR] _start_modules_thread: {e}")
             self.after(0, lambda: messagebox.showerror("시작 실패", str(e)))
+        finally:
+            # 안전한 정리
+            for m in (config.listener, config.notifier, config.bot, config.capture):
+                try:
+                    if m and hasattr(m, 'stop'):
+                        m.stop()
+                except Exception as e:
+                    print(f"[WARN] stop during finally: {m}: {e}")
+                
 
-    def _wait(self, pred, timeout_s, interval=0.05):
-        t0 = time.time()
-        while time.time() - t0 < timeout_s:
-            if pred(): return True
-            time.sleep(interval)
+    def _wait(self, pred, timeout_sec: float, shutdown_evt=None):
+        """pred()가 True가 되거나 timeout, 혹은 종료 이벤트가 set될 때까지 대기."""
+        deadline = time.monotonic() + timeout_sec
+        while time.monotonic() < deadline:
+            if shutdown_evt is not None and shutdown_evt.is_set():
+                return False
+            try:
+                if pred():
+                    return True
+            except Exception:
+                pass
+            time.sleep(0.05)
         return False
 
-    def _fail(self, msg):
+    def _fail(self, msg: str):
+        # 메인 스레드로 띄우기
         self.after(0, lambda: messagebox.showerror("오류", msg))
+        return False
 
 
 class _BuffRow:

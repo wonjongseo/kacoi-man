@@ -50,6 +50,12 @@ class Notifier:
         print('\n[~] Started notifier')
         self.thread.start()
     
+    def stop(self):
+        if config.macro_shutdown_evt:
+            config.macro_shutdown_evt.set()
+        # 필요시 조인
+        # if self.thread and self.thread.is_alive():
+        #     self.thread.join(timeout=2)
 
     def _main(self):    
         
@@ -72,7 +78,7 @@ class Notifier:
         self.ready = True
         prev_others = 0
 
-        while True:
+        while not (config.macro_shutdown_evt and config.macro_shutdown_evt.is_set()):
             if config.enabled:
                 frame = config.capture.frame
                 height, width, _ = frame.shape
@@ -82,6 +88,7 @@ class Notifier:
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 if np.count_nonzero(gray < 15) / height / width > self.room_change_threshold:
                     self._alert('siren')
+                    
                 
                 filtered = utils.filter_color(minimap, OTHER_RANGES)
                 others = len(utils.multi_match(filtered, OTHER_TEMPLATE, threshold=0.5))
@@ -105,12 +112,13 @@ class Notifier:
         Plays an alert to notify user of a dangerous event. Stops the alert
         once the key bound to 'Start/stop' is pressed.
         """
-
+        config.bot.release_all_keys()
         config.enabled = False
         config.listener.enabled = False
         self.mixer.load(get_alert_path(name))
         self.mixer.set_volume(volume)
         self.mixer.play(-1)
+        
         while not kb.is_pressed("f9"):
             time.sleep(0.1)
         self.mixer.stop()

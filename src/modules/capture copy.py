@@ -250,99 +250,49 @@ class Capture:
                     # x1, x2, y1, y2 = map(int, (x1, x2, y1, y2))
                     H, W = self.frame.shape[:2]
 
-                    facing_left  = (config.bot.left_down  and not config.bot.right_down)
-                    facing_right = (config.bot.right_down and not config.bot.left_down)
-
-                    if not (facing_left or facing_right):
-                        config.bot.found_monster = False
-                        config.bot.monster_dir = None
-                        continue
-
-                    # 앞/뒤 영역 계산 (x1,y1,x2,y2)
-                    if facing_left and facing_right == False :
-                        # 왼쪽이 앞
-                        fx1, fx2 = px - front, px + back
-                        bx1, bx2 = px - back,  px + front
-                    elif facing_right and facing_left == False:
-                        # 오른쪽이 앞
-                        fx1, fx2 = px - back,  px + front
-                        bx1, bx2 = px - front, px + back
+                    if config.bot.left_down and not config.bot.right_down:
+                        x1, x2 = px - front, px + back
+                    elif config.bot.right_down and not config.bot.left_down:
+                        x1, x2 = px - back,  px + front
                     else:
                         config.bot.found_monster = False
                         return  # 또는 continue
 
-                    fy1, fy2 = py - up, py + down
-                    by1, by2 = fy1, fy2
+                    y1, y2 = py - up, py + down
 
-                    # 클램프
-                    fx1 = max(0, int(fx1)); fy1 = max(0, int(fy1))
-                    fx2 = min(W, int(fx2)); fy2 = min(H, int(fy2))
+                    # 경계 클램프 + 정수화
+                    x1 = max(0, int(x1)); y1 = max(0, int(y1))
+                    x2 = min(W, int(x2)); y2 = min(H, int(y2))
 
-                    bx1 = max(0, int(bx1)); by1 = max(0, int(by1))
-                    bx2 = min(W, int(bx2)); by2 = min(H, int(by2))
+                    # 영역 검증
+                    if x2 <= x1 or y2 <= y1:
+                        return  # 또는 continue
 
-                    # 잘못된 영역 방지
-                    if fx2 <= fx1 or fy2 <= fy1 or bx2 <= bx1 or by2 <= by1:
-                        config.bot.found_monster = False
-                        config.bot.monster_dir = None
-                        continue
+                    attack_area = self.frame[y1:y2, x1:x2]
+                    if attack_area.size == 0:
+                        continue 
+                    gray_area = cv2.cvtColor(attack_area, cv2.COLOR_BGRA2GRAY)
+                    
+                    for tpl in MONSTER_TEMPLATES:
+                        h_img, w_img = gray_area.shape
+                        h_tpl, w_tpl = tpl.shape
 
-                    # ROI 추출
-                    front_roi = self.frame[fy1:fy2, fx1:fx2]
-                    back_roi  = self.frame[by1:by2, bx1:bx2]
+                        # 템플릿이 더 크면 스킵
+                        if h_img < h_tpl or w_img < w_tpl:
+                            continue
 
-                    front_gray = cv2.cvtColor(front_roi, cv2.COLOR_BGRA2GRAY) if front_roi.size != 0 else None
-                    back_gray  = cv2.cvtColor(back_roi,  cv2.COLOR_BGRA2GRAY)  if back_roi.size  != 0 else None
-
-                    # 탐지 (※ 회전/공격은 하지 않는다!)
-                    back_found  = self._has_monster(back_gray,  MONSTER_TEMPLATES, threshold=0.7)
-                    front_found = self._has_monster(front_gray, MONSTER_TEMPLATES, threshold=0.7)
-
-                    if back_found:
-                        config.bot.found_monster = True
-                        config.bot.monster_dir = 'back'
-                        utils.capture_minimap(bx1, by1, bx2, by2)
-                    elif front_found:
-                        config.bot.found_monster = True
-                        config.bot.monster_dir = 'front'
-                        utils.capture_minimap(fx1, fy1, fx2, fy2)
-                    else:
-                        config.bot.found_monster = False
-                        config.bot.monster_dir = None
-
-                    time.sleep(0.001)
-
+                        res = cv2.matchTemplate(gray_area, tpl, cv2.TM_CCOEFF_NORMED)
+                        if np.any(res >= 0.7):
+                            config.bot.found_monster = True
+                            utils.capture_minimap(x1, y1 , x2,  y2)
+                            break
+                        else:
+                            config.bot.found_monster = False
                         
 
                 time.sleep(0.001)
-    def _face(self, to_dir: str):
-        bot = getattr(config, 'bot', None)
-        if not bot:
-            return
-        if to_dir == 'left':
-            # 오른쪽 키 해제, 왼쪽 키 누름
-            if bot.right_down:
-                pyautogui.keyUp('right'); bot.right_down = False
-            if not bot.left_down:
-                pyautogui.keyDown('left'); bot.left_down = True
-        elif to_dir == 'right':
-            # 왼쪽 키 해제, 오른쪽 키 누름
-            if bot.left_down:
-                pyautogui.keyUp('left'); bot.left_down = False
-            if not bot.right_down:
-                pyautogui.keyDown('right'); bot.right_down = True
-    def _has_monster(self, gray_area, templates, threshold=0.7):
-        if gray_area is None or gray_area.size == 0:
-            return False
-        h_img, w_img = gray_area.shape[:2]
-        for tpl in templates:
-            h_tpl, w_tpl = tpl.shape[:2]
-            if h_img < h_tpl or w_img < w_tpl:
-                continue
-            res = cv2.matchTemplate(gray_area, tpl, cv2.TM_CCOEFF_NORMED)
-            if np.any(res >= threshold):
-                return True
-        return False
+
+
     def screenshot(self, delay = 1):
         try:
             return np.array(self.sct.grab(self.window))
