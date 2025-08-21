@@ -64,10 +64,13 @@ class Bot:
         
         self._fm_last_exec_t = 0.0
 
-        self.monster_dir = None
-        self._last_turn_t = 0.0
-        self._turn_interval = 0.15  # 연속 회전 방지 최소 간격(초)
         
+        self._last_drop_t = 0.0
+        self._drop_cooldown = 0.25  # 연속 드랍 방지
+
+        self._attack_anim_sec = getattr(config.setting_data, 'attack_anim_sec', 0.35)  # 모션 길이(초)
+        self.attack_anim_until = 0.0  # 모션이 끝나는 시각
+
         self.input_lock = threading.RLock()
         config.input_lock = self.input_lock
     
@@ -313,12 +316,13 @@ class Bot:
                     # 공격 가능 여부는 "거리"로 결정
                     
                     self.can_attack = not self.up_down
-                    if  target_y > cur_y + 6  and self.prev_action != 'down' :
-                        print("?")
-                        print(f'cur_y : {cur_y}, target_y : {target_y}')
-                        self.drop_down()
-                        time.sleep(0.25)              # 낙하 안정화
-                        # continue                      # 다음 loop 에서 다시 판단
+                    if act != "down" and (target_y > cur_y + 6):
+                        now = time.time()
+                        if (now - self._last_drop_t) >= self._drop_cooldown:
+                            self.drop_down()
+                            self._last_drop_t = now
+                        # 아래층으로 내려간 뒤 위치가 안정화될 시간을 잠깐 준다
+                        time.sleep(0.15)
                     
                     elif target_y + 6 < cur_y:
                         print("??")
@@ -588,15 +592,7 @@ class Bot:
                 if success == False:
                     df = 1 if utils.bernoulli(0.5) else -1
                     self._nudge_toward(target_x - df)
-                # time.sleep(0.05)
-                # if self.left_down == False and self.right_down == False and self.prev_direction != '':
-                #         print(f'self.prev_direction : {self.prev_direction}')
-                #         if self.prev_direction =='right':
-                #             self.right_down = True
-                #             pyautogui.press('right') 
-                #         else:
-                #             self.left_down = True
-                #             pyautogui.press('left') 
+               
             return success
 
         elif wp.action == 'down' : 
@@ -606,12 +602,26 @@ class Bot:
         return True
     
     def drop_down(self):
-        """↓+Alt 로 아래 플랫폼으로 내려가기"""
-        pyautogui.keyDown('down')
-        pyautogui.press(self.jump_key)       # 점프키 → 드랍
-        time.sleep(0.12)             # 짧게 눌렀다 떼기
-        pyautogui.keyUp('down')
+        """↓+Jump(Alt)로 아래 플랫폼으로 내려가기 — 공격키/방향키와 충돌 방지"""
+        # 공격키/점프키 동시 입력 방지
+        pyautogui.keyUp(self.attack_key)
+        self.shift_down = False
 
+        # 방향키는 굳이 누른 채일 필요 없음
+        if self.left_down:
+            pyautogui.keyUp('left');  self.left_down  = False
+        if self.right_down:
+            pyautogui.keyUp('right'); self.right_down = False
+
+        pyautogui.keyDown('down')
+        pyautogui.press(self.jump_key)   # Alt 단발
+        time.sleep(0.12)
+        pyautogui.keyUp('down')
+    def mark_attack(self, anim_sec=None):
+        sec = anim_sec or self._attack_anim_sec
+        now = time.time()
+        self._last_attack_t = now
+        self.attack_anim_until = now + sec
     def release_all_keys(self):
         with self.input_lock:
             for k in (self.attack_key, 'left', 'right', 'up', 'down', 'z'):
@@ -646,6 +656,7 @@ class Bot:
     def tap_attack(self, dur=0.01):
         """홀드가 아닌 '탁' 한 번. 내부 플래그를 홀드로 남기지 않음."""
         with self.input_lock:
+            pyautogui.keyUp(self.jump_key)
             if self.shift_down:
                 pyautogui.keyUp(self.attack_key)
                 self.shift_down = False
@@ -654,29 +665,3 @@ class Bot:
             pyautogui.keyUp(self.attack_key)
             # shift_down 플래그는 False 유지
 
-    # def aa(self):
-        # if self.prev_char_pos and config.player_pos_ab:
-            #     dif = math.hypot(config.player_pos_ab[0]-self.prev_char_pos[0],
-            #                 config.player_pos_ab[1]-self.prev_char_pos[1])
-            #     if dif < 3:
-            #         self.stuck_attack_cnt += 1
-            #     else:
-            #         self.stuck_attack_cnt = 1
-            # else:
-            #     self.stuck_attack_cnt = 1
-
-            # self.prev_char_pos = config.player_pos_ab
-
-            # if self.stuck_attack_cnt >= 10:
-            #     print("[INFO] 같은 자리 10회 공격 → 강제 이동")
-            #     self.release_all_keys()
-            #     self.sync_direction()
-            #     pyautogui.press(self.jump_key)
-            #     self.sync_waypoint_to_y()
-            #     self.stuck_attack_cnt = 0
-            #     time.sleep(0.1)
-            #     continue    
-
-
-                
-        

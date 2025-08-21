@@ -136,6 +136,7 @@ class Capture:
         # 탭 공격(락 내부)
         bot.tap_attack(dur=0.01)
         self.last_attack_t = now
+        bot.mark_attack()  # ← 공격 모션 진행 중 표시
     def start(self): 
         print('\n[~] Started video capture')
         self.thread.start()

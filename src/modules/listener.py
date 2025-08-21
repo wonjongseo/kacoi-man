@@ -5,10 +5,7 @@ import keyboard as kb
 from dataclasses import dataclass
 from typing import List
 from src.common import config, utils, handle_windows
-from src.modules.bot import Bot
-from src.modules.capture import Capture
-from src.modules.notifier import Notifier
-
+import math
 # ─────────────────────────────
 # Buff 스케줄용 데이터 구조
 # ─────────────────────────────
@@ -34,9 +31,12 @@ class Listener:
         self._last_cast_ts = 0.0  # ← 마지막 버프 발사 시각 기록 (전역 간격용)
         self._alive = threading.Event()
         self._cv = threading.Condition()
+
+        
+
         self._buff_tasks: List[_BuffTask] = []
         self._buff_thread = threading.Thread(target=self._buff_loop, daemon=True)
-
+    
     # 외부에서 Settings 적용 후 호출하면 최신 버프들 반영됨
     def reload_buffs_from_config(self):
         s = getattr(config, "setting_data", None)
@@ -49,7 +49,7 @@ class Listener:
             if not key or cd <= 0:
                 continue
             # 처음엔 약간 지연(0.5s) 후 시전; enable 시점에 다시 prime 됨.
-            tasks.append(_BuffTask(key=key, cooldown=cd, next_at=now + 0.5))
+            tasks.append(_BuffTask(key=key, cooldown=cd, next_at=float('inf')))
 
         with self._cv:
             self._buff_tasks = tasks
@@ -142,15 +142,15 @@ class Listener:
     # Buff scheduler internals
     # ─────────────────────────────
     def _prime_buffs_on_enable(self):
-        """F9로 최초/재시작할 때, 모든 버프의 next_at을 현재 시각 기준으로 재설정."""
         now = time.time()
         with self._cv:
-            # 동시에 몰리지 않게 아주 작은 스태거(0~0.4s)도 줌
             stagger = 0.0
             for t in self._buff_tasks:
                 t.next_at = now + 0.2 + stagger
                 t.last_at = 0.0
-                stagger += 0.1  # 0.1s 간격으로 순차 발사
+                stagger += 0.1
+            # 전역 발사간격도 지금으로 리셋(연속 발사 방지)
+            self._last_cast_ts = now
             self._cv.notify_all()
 
     def _buff_loop(self):
@@ -161,8 +161,14 @@ class Listener:
                     self._cv.wait(timeout=0.5)
                     continue
                 now = time.time()
-                due = min(t.next_at for t in self._buff_tasks)
-                timeout = max(0.0, due - now)
+                finite_tasks = [t for t in self._buff_tasks if math.isfinite(t.next_at)]
+                if finite_tasks:
+                    due = min(t.next_at for t in finite_tasks)
+                    # 너무 큰 값 방지용 캡(최대 5초만 대기)
+                    timeout = max(0.0, min(5.0, due - now))
+                else:
+                    # 아직 prime되지 않은 상태(모두 inf) → 짧게만 대기
+                    timeout = 0.5
                 self._cv.wait(timeout=timeout)
 
             if not self._alive.is_set():
@@ -173,18 +179,9 @@ class Listener:
                 time.sleep(0.2)
                 continue
 
-            # 4) 전투 중이면 지연
-            try:
-                while config.bot.shift_down :
-                    print("전투중")
-                    time.sleep(0.2)
-                    continue
-                # if config.bot.shift_down == True: #  getattr(config, "bot", None) and getattr(config.bot, "found_monster", False):
-                #     print("전투중")
-                #     time.sleep(0.2)
-                #     continue
-            except Exception:
-                continue
+           
+            while time.time() < config.bot.attack_anim_until:
+                    time.sleep(0.02)
 
             now = time.time()
             since = now - self._last_cast_ts
