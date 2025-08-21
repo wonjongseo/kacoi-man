@@ -218,8 +218,9 @@ class ActionForm(ttk.Frame):
 
     def _clear_fields_only(self):
         self.var_x.set(""); self.var_y.set("")
-        self.var_end_y.set(""); self.var_duration.set(""); self.var_count.set("")
+        self.var_end_y.set(""); self.var_duration.set(""); self.var_count.set("1")
         # --- 새 옵션 ---
+     
         self.var_in_place.set(False)
         self.var_in_place_delay.set("0.0")
         self.var_jump_pause.set(False)

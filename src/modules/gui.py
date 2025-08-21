@@ -10,7 +10,7 @@ class GUI:
     DISPLAY_FRAME_RATE = 30
     RESOLUTIONS = {
         'DEFAULT': '800x700',
-        '게임 설정' : '800x800',
+        '게임 설정' : '800x900',
         '루틴 설정': '1000x800'
     }
     def __init__(self):
@@ -38,6 +38,7 @@ class GUI:
         self.navigation.add(self.monitor, text="모니터")
         self.navigation.add(self.game_setting, text="게임 설정")
         self.navigation.add(self.edit, text="루틴 설정")
+
 
         self.navigation.pack(expand=True, fill='both')
         self.navigation.bind('<<NotebookTabChanged>>', self._resize_window)

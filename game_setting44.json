@@ -7,7 +7,7 @@
   "hp_key": "del",
   "mp_key": "end",
   "attack_range": {
-    "front": 330,
+    "front": 365,
     "back": 0,
     "up": 100,
     "down": 100
@@ -29,7 +29,7 @@
     }
   }, "buffs": [
     {
-      "cooldown_sec": 400,
+      "cooldown_sec": 200,
       "key": "home"
     },
      {

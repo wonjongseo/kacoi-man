@@ -1,0 +1,32 @@
+{
+  "monster_dir": "C:/Users/visio/Desktop/develop/jonggack_macro/assets/monsters/two_cross_way",
+  "hp_pct": 50,
+  "mp_pct": 50,
+  "hp_key": "del",
+  "mp_key": "end",
+  "jump_key": "alt",
+  "attack_key": "shift",
+  "attack_range": {
+    "front": 90,
+    "back": 0,
+    "up": 30,
+    "down": 30
+  },
+  "templates": {
+    "minimap": {
+      "top_left": "",
+      "bottom_right": "",
+      "player": "",
+      "other": ""
+    },
+    "character": {
+      "hp_bar": "",
+      "mp_bar": "",
+      "name": "C:/Users/visio/Desktop/develop/jonggack_macro/assets/charactor3.png"
+    },
+    "misc": {
+      "revive_message": ""
+    }
+  },
+  "buffs": []
+}

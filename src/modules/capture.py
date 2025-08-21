@@ -102,6 +102,9 @@ class Capture:
         # self.potionThread = threading.Thread(target=self._potionMain)
         # self.potionThread.daemon = True
         
+        
+
+
         self.window_resized = False
         threading.Thread(target=PotionManager().loop,daemon=True).start()
 
@@ -209,8 +212,10 @@ class Capture:
                     config.player_pos = utils.convert_to_relative(player[0], minimap)
                     config.player_pos_ab = (self.window['left'] + mm_tl[0] + player[0][0], self.window['top']  + mm_tl[1] + player[0][1])
                 
+                frame_h, frame_w = self.frame.shape[:2]
+                cropped_frame = self.frame[0:frame_h+100, :]
                 PLAYER_NAME_TEMPLATE =  cv2.imread(config.setting_data.templates.character.name, 0)
-                player_name = utils.single_match(self.frame, PLAYER_NAME_TEMPLATE)
+                player_name = utils.single_match(cropped_frame, PLAYER_NAME_TEMPLATE)
 
                 if player_name :
                     x , y = utils.center_from_bounds(*player_name)
@@ -291,13 +296,14 @@ class Capture:
                     front_roi = self.frame[fy1:fy2, fx1:fx2]
                     back_roi  = self.frame[by1:by2, bx1:bx2]
 
+                        
                     front_gray = cv2.cvtColor(front_roi, cv2.COLOR_BGRA2GRAY) if front_roi.size != 0 else None
                     back_gray  = cv2.cvtColor(back_roi,  cv2.COLOR_BGRA2GRAY)  if back_roi.size  != 0 else None
 
                     # 탐지 (※ 회전/공격은 하지 않는다!)
                     back_found  = self._has_monster(back_gray,  MONSTER_TEMPLATES, threshold=0.7)
                     front_found = self._has_monster(front_gray, MONSTER_TEMPLATES, threshold=0.7)
-
+                    
                     if back_found:
                         config.bot.found_monster = True
                         config.bot.monster_dir = 'back'

@@ -3,6 +3,7 @@ import json
 import os
 import threading
 import time
+from src.gui.settings.frontROIMonitor import FrontROIMonitor
 from src.modules.bot import Bot
 from src.modules.capture import Capture
 from src.modules.notifier import Notifier
@@ -12,7 +13,6 @@ import tkinter as tk
 from tkinter import  ttk, filedialog, messagebox
 import src.datas.setting_data as sd
 from  src.common  import config, default_value as dv, utils
-
 
 def add_placeholder(entry, placeholder):
         def on_focus_in(event):
@@ -103,23 +103,72 @@ class Settings(Tab):
         ttk.Label(frm_potion, text="MP 키").grid(row=1, column=3, sticky="e", padx=(16,4), pady=(0,8))
         ttk.Entry(frm_potion, textvariable=self.var_mp_key, width=10)\
             .grid(row=1, column=4, sticky="w", padx=(0,8), pady=(0,8))
-    def _create_attack_range_feild(self,row_index):
-        # 공격 사거리(px)
+    def _create_attack_range_feild(self, row_index):
+        # 공격 사거리 (px)
         frm_range = ttk.LabelFrame(self, text="공격 사거리 (px)")
         frm_range.grid(row=row_index, column=0, sticky="ew", padx=4)
-        for c in (1,3): frm_range.columnconfigure(c, weight=1)
-        ttk.Label(frm_range, text="전방").grid(row=0, column=0, sticky="w", padx=8, pady=(8,4))
-        ttk.Spinbox(frm_range, from_=0, to=5000, textvariable=self.var_rng_front, width=7, justify="right")\
-            .grid(row=0, column=1, sticky="w", pady=(8,4))
-        ttk.Label(frm_range, text="후방").grid(row=0, column=2, sticky="w", padx=(16,8), pady=(8,4))
-        ttk.Spinbox(frm_range, from_=0, to=5000, textvariable=self.var_rng_back, width=7, justify="right")\
-            .grid(row=0, column=3, sticky="w", pady=(8,4))
-        ttk.Label(frm_range, text="위").grid(row=1, column=0, sticky="w", padx=8, pady=(0,8))
-        ttk.Spinbox(frm_range, from_=0, to=5000, textvariable=self.var_rng_up, width=7, justify="right")\
-            .grid(row=1, column=1, sticky="w", pady=(0,8))
-        ttk.Label(frm_range, text="아래").grid(row=1, column=2, sticky="w", padx=(16,8), pady=(0,8))
-        ttk.Spinbox(frm_range, from_=0, to=5000, textvariable=self.var_rng_down, width=7, justify="right")\
-            .grid(row=1, column=3, sticky="w", pady=(0,8))
+        # 입력칸이 늘어났을 때 좌우로 잘 늘어나도록
+        for c in (1, 3, 5, 7):
+            frm_range.columnconfigure(c, weight=1)
+
+        # ── 한 줄에: 전방 | [spin] | 후방 | [spin] | 위 | [spin] | 아래 | [spin]
+        ttk.Label(frm_range, text="전방").grid(row=0, column=0, sticky="w", padx=(8,4), pady=(8,4))
+        ttk.Spinbox(frm_range, from_=0, to=5000, textvariable=self.var_rng_front,
+                    width=7, justify="right").grid(row=0, column=1, sticky="ew", pady=(8,4))
+
+        ttk.Label(frm_range, text="후방").grid(row=0, column=2, sticky="w", padx=(16,4), pady=(8,4))
+        ttk.Spinbox(frm_range, from_=0, to=5000, textvariable=self.var_rng_back,
+                    width=7, justify="right").grid(row=0, column=3, sticky="ew", pady=(8,4))
+
+        ttk.Label(frm_range, text="위").grid(row=0, column=4, sticky="w", padx=(16,4), pady=(8,4))
+        ttk.Spinbox(frm_range, from_=0, to=5000, textvariable=self.var_rng_up,
+                    width=7, justify="right").grid(row=0, column=5, sticky="ew", pady=(8,4))
+
+        ttk.Label(frm_range, text="아래").grid(row=0, column=6, sticky="w", padx=(16,4), pady=(8,4))
+        ttk.Spinbox(frm_range, from_=0, to=5000, textvariable=self.var_rng_down,
+                    width=7, justify="right").grid(row=0, column=7, sticky="ew", pady=(8,4))
+
+        # ── 다음 줄: 버튼 하나
+        ttk.Button(frm_range, text="공격사거리 확인", command=self._open_attack_range_popup)\
+            .grid(row=1, column=0, columnspan=8, sticky="e", padx=8, pady=(0,8))
+    def _open_attack_range_popup(self):
+
+        if config.setting_data is  None:
+            utils.display_message("확인", "게임 셋팅을 적용해주세요")
+            return
+        # 이미 떠 있으면 포커스만
+        if self._range_popup and self._range_popup.winfo_exists():
+            try:
+                self._range_popup.deiconify()
+                self._range_popup.lift()
+                self._range_popup.focus_force()
+            except Exception:
+                pass
+            return
+
+        # 새 팝업 생성
+        self._range_popup = tk.Toplevel(self)
+        self._range_popup.title("Front ROI Monitor")
+        self._range_popup.attributes("-topmost", True)  # 항상 위 (원하면 제거)
+
+        # 화면 오른쪽 상단 배치 (예: 720x420)
+        win_w, win_h = 720, 420
+        sw = self._range_popup.winfo_screenwidth()
+        x = sw - win_w
+        y = 0
+        self._range_popup.geometry(f"{win_w}x{win_h}+{x}+{y}")
+
+        # 모니터 위젯 부착
+        monitor = FrontROIMonitor(self._range_popup, canvas_size=(700, 360))
+        monitor.pack(fill="both", expand=True)
+
+        # 닫힘 핸들러
+        def _on_close():
+            try:
+                self._range_popup.destroy()
+            finally:
+                self._range_popup = None
+        self._range_popup.protocol("WM_DELETE_WINDOW", _on_close)
     def _create_template_images_feild(self, row_index):
         # 템플레이트 이미지 (PNG)
         frm_tmpl = ttk.LabelFrame(self, text="게임 설정 템플레이트 이미지 (PNG)")
@@ -171,7 +220,7 @@ class Settings(Tab):
     def _create_buff_feild(self, row_index) :
         # ── 버프 ── (포션 사용 임계치 바로 아래)
         # __init__ 내, 포션/공격사거리 아래 적당한 위치에 배치
-        frm_buffs = ttk.LabelFrame(self, text="버프들")
+        frm_buffs = ttk.LabelFrame(self, text="버프")
         frm_buffs.grid(row=row_index, column=0, sticky="ew", padx=4, pady=(0,10))
         frm_buffs.columnconfigure(0, weight=1)
 
@@ -232,7 +281,7 @@ class Settings(Tab):
         self.var_rng_back  = tk.IntVar(value=dv.RANGE_BACK)
         self.var_rng_up    = tk.IntVar(value=dv.RANGE_UP)
         self.var_rng_down  = tk.IntVar(value=dv.RANGE_DOWN)
-
+        self._range_popup = None  # 팝업 핸들
         # 템플레이트(이미지 경로)
         self.var_mm_tl   = tk.StringVar()  # minimap top-left
         self.var_mm_br   = tk.StringVar()  # minimap bottom-right
@@ -479,8 +528,12 @@ class Settings(Tab):
         elif cfg.attack_key == "":
             messagebox.showwarning("필수", "공격 키 입력 후 적용해주세요.")
             return
-        if show_msg and config.macro_thread == None and config.macro_thread.is_alive() == False:
+        if show_msg and config.macro_thread == None:
             messagebox.showinfo("적용됨", "설정이 적용되었습니다.")
+
+        if self._range_popup and self._range_popup.winfo_exists():
+            self._range_popup.destroy()
+            self._range_popup = None    
         config.setting_data = cfg
         config.gui.monitor.refresh_routine()
         config.gui.monitor.refresh_labels()
