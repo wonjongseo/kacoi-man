@@ -38,7 +38,7 @@ routine = None
 
 # Shares the main bot loop
 bot = None
-
+input_lock = None
 # Shares the video capture loop
 capture = None
 

@@ -5,7 +5,7 @@ from src.gui.monitor.minimap import Minimap
 from src.gui.interfaces import Tab
 
 
-ACTIONS = ("move", "jump", "ladder")
+ACTIONS = ("move", "jump", "ladder", "down" , "wait")
 
 class ActionForm(ttk.Frame):
     """오른쪽 입력 폼: 공통(x,y,action) + 액션별 필드(조건부)."""
@@ -148,7 +148,6 @@ class ActionForm(ttk.Frame):
         elif act == "jump":
             # jump 기본 필드(count)
             self.row_jump.grid(row=0, column=0, sticky="ew")
-
             self.row_jump_inplace.grid(row=1, column=0, sticky="ew", pady=(4,0))
             # self.row_jump_pause.grid(row=2, column=0, sticky="ew", pady=(2,0))
 

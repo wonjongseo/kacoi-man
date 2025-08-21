@@ -1,0 +1,38 @@
+[
+  {
+    "action": "jump",
+    "x": 81,
+    "y": 103,
+    "count": 1,
+    "in_place": false
+  },
+  {
+    "action": "ladder",
+    "x": 82,
+    "y": 99,
+    "end_y": 86
+  },
+  {
+    "action": "down",
+    "x": 68,
+    "y": 86
+  },
+  {
+    "action": "jump",
+    "x": 41,
+    "y": 103,
+    "count": 1,
+    "in_place": false
+  },
+  {
+    "action": "ladder",
+    "x": 38,
+    "y": 99,
+    "end_y": 86
+  },
+  {
+    "action": "down",
+    "x": 60,
+    "y": 86
+  }
+]

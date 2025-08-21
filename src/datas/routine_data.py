@@ -20,7 +20,7 @@ class ActionItem:
 
     # ── 유효성 검사 ───────────────────────────────────────────────
     def validate(self) -> None:
-        if self.action not in ("move","jump","ladder"):
+        if self.action not in ("move","jump","ladder", "down", "wait"):
             raise ValueError("action must be one of move/jump/wait/ladder")
         # 액션별 필드 강제
         if self.action == "ladder":

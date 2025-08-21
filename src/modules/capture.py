@@ -102,13 +102,40 @@ class Capture:
         # self.potionThread = threading.Thread(target=self._potionMain)
         # self.potionThread.daemon = True
         
-        
+        self.last_attack_t = 0.0
+        self.attack_interval = 0.14   # 공격 최소 간격(초) - 필요시 0.10~0.20 튜닝
+        config.attack_in_capture = True  # 캡처 스레드가 공격을 담당
 
 
         self.window_resized = False
         threading.Thread(target=PotionManager().loop,daemon=True).start()
 
+    def _attack_immediate(self, dir_hint: str):
+        bot = getattr(config, 'bot', None)
+        if not bot or not config.enabled:
+            return
+        if bot.is_climbing or bot.up_down:   # 사다리 최우선
+            return
 
+        now = time.time()
+        if now - self.last_attack_t < self.attack_interval:
+            return
+
+        # 방향 보정
+        if dir_hint == 'back':
+            if bot.right_down and not bot.left_down:
+                bot.face('left')
+            elif bot.left_down and not bot.right_down:
+                bot.face('right')
+            else:
+                bot.face('left' if (bot.prev_direction == 'right') else 'right')
+        else:
+            if not bot.left_down and not bot.right_down:
+                bot.face(bot.prev_direction or 'right')
+
+        # 탭 공격(락 내부)
+        bot.tap_attack(dur=0.01)
+        self.last_attack_t = now
     def start(self): 
         print('\n[~] Started video capture')
         self.thread.start()
@@ -307,12 +334,20 @@ class Capture:
                     if back_found:
                         config.bot.found_monster = True
                         config.bot.monster_dir = 'back'
-                        utils.capture_minimap(bx1, by1, bx2, by2)
+                        # 즉시 공격
+                        self._attack_immediate('back')
+                        # utils.capture_minimap(bx1, by1, bx2, by2)  # 디버그 필요 시만
                     elif front_found:
                         config.bot.found_monster = True
                         config.bot.monster_dir = 'front'
-                        utils.capture_minimap(fx1, fy1, fx2, fy2)
+                        self._attack_immediate('front')
+                        # utils.capture_minimap(fx1, fy1, fx2, fy2)
                     else:
+                        # 공격 키가 눌린 채로 남지 않도록 정리
+                        bot = getattr(config, 'bot', None)
+                        if bot and bot.shift_down:
+                            pyautogui.keyUp(bot.attack_key)
+                            bot.shift_down = False
                         config.bot.found_monster = False
                         config.bot.monster_dir = None
 
@@ -325,18 +360,7 @@ class Capture:
         bot = getattr(config, 'bot', None)
         if not bot:
             return
-        if to_dir == 'left':
-            # 오른쪽 키 해제, 왼쪽 키 누름
-            if bot.right_down:
-                pyautogui.keyUp('right'); bot.right_down = False
-            if not bot.left_down:
-                pyautogui.keyDown('left'); bot.left_down = True
-        elif to_dir == 'right':
-            # 왼쪽 키 해제, 오른쪽 키 누름
-            if bot.left_down:
-                pyautogui.keyUp('left'); bot.left_down = False
-            if not bot.right_down:
-                pyautogui.keyDown('right'); bot.right_down = True
+        bot.face(to_dir)  # <<<<<< 단 한 줄만
     def _has_monster(self, gray_area, templates, threshold=0.7):
         if gray_area is None or gray_area.size == 0:
             return False

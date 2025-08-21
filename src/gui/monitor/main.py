@@ -91,7 +91,6 @@ class Monitor(Tab):
     def refresh_routine(self, current_index=0):
         if config.routine == None:
             return
-        print('refresh_routine')
         items = config.routine.items
         self.routine_tree.delete(*self.routine_tree.get_children())
 
