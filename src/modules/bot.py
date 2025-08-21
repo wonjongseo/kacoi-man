@@ -301,13 +301,19 @@ class Bot:
         
         while not (config.macro_shutdown_evt and config.macro_shutdown_evt.is_set()):
             try : 
+                self.stuck_attack_cnt = 0
+                self._ensure_key(self.attack_key, 'shift_down', False); 
+                
                 if config.enabled is False:
                     time.sleep(0.001)
                     continue
+                
+                if config.appear_other:
+                    self.release_all_keys()
+                    time.sleep(0.001)
+                    continue
 
-                if self.found_monster :
-
-                    self.monster_dir = getattr(self, 'monster_dir', None)
+                if self.is_climbing == False and self.found_monster :
                     now = time.time()
                     if self.monster_dir == 'back' and (now - self._last_turn_t) >= self._turn_interval:
                         # 현재 바라보는 반대쪽으로 한 번만 돌기
@@ -315,8 +321,8 @@ class Bot:
                             self._face_only('left')
                         elif self.left_down and not self.right_down:
                             self._face_only('right')
-                        else:
-                            continue
+                        # else:
+                        #     continue
                         self._last_turn_t = now
                         
                         # 회전 후 바로 공격 유지
@@ -348,8 +354,7 @@ class Bot:
                     time.sleep(0.1)
                         
                 else:
-                    self.stuck_attack_cnt = 0
-                    self._ensure_key(self.attack_key, 'shift_down', False); 
+                    
                     
                     wp = config.routine.current_wp()
                     target_x, target_y, act = wp.x, wp.y, wp.action
@@ -520,8 +525,8 @@ class Bot:
         hit = False
 
         if wp.action == "ladder":
-            # 사다리는 x 정밀도만 중요 (+/-1px)
-            tol = 0  if not (self.left_down or self.right_down) else 1
+            
+            tol = 0  if not (self.left_down or self.right_down) else df.REACH_LADDER_MOVING
             
             hit=  dx <= tol
         elif wp.action == "jump":
@@ -564,27 +569,27 @@ class Bot:
             if self.shift_down:
                 self._ensure_key(self.attack_key, 'shift_down', False)
 
-            self._ensure_key('left',  'left_down', False)
-            self._ensure_key('right', 'right_down', False)
+            # self._ensure_key('left',  'left_down', False)
+            # self._ensure_key('right', 'right_down', False)
 
             # 0) x 미세 정렬(안전장치)
             success = False
             target_x = wp.x
             
-            while True:
-                while self.found_monster :
-                    self._ensure_key('z', 'z_down', False); 
-                    self._ensure_key(self.attack_key, 'shift_down', True); 
-                
-                self._ensure_key(self.attack_key, 'shift_down', False); 
+            if self.left_down == False and self.right_down == False:
+                while True:
+                    while self.found_monster :
+                        self._ensure_key('z', 'z_down', False); 
+                        self._ensure_key(self.attack_key, 'shift_down', True); 
+                    
+                    self._ensure_key(self.attack_key, 'shift_down', False); 
 
 
-                cx, _ = config.player_pos_ab
-                if abs(cx - target_x) == 0:
-                    break
-                print("if abs(cx - target_x) <= 1:")
-                self._nudge_toward(target_x, step_ms=0.1)
-                time.sleep(0.01)
+                    cx, _ = config.player_pos_ab
+                    if abs(cx - target_x) == 0:
+                        break
+                    self._nudge_toward(target_x, step_ms=0.1)
+                    time.sleep(0.01)
 
             # 1) 즉시 부착 시도 (Up+Jump)
             print("1) 즉시 부착 시도 (Up+Jump)")
@@ -598,14 +603,18 @@ class Bot:
                 stall_t   = time.time()
 
                 while True:
-                    
+                    self._ensure_key('left',  'left_down', False)
+                    self._ensure_key('right', 'right_down', False)
                     pos = config.player_pos_ab
                     
                     _, cy = pos
 
                     # 목표 y 도달?
                     if target_y is not None and cy <= target_y:
-                        time.sleep(0.5)
+
+                        # utils.display_message("도착!","도착!")
+                        
+                        # time.sleep(0.5)
                         success = True
                         break
                     # if cy - target_y > 4 :
@@ -624,19 +633,21 @@ class Bot:
 
                     time.sleep(0.03)
             finally:
-                time.sleep(0.35)
+                time.sleep(0.25)
                 self._ensure_key('up',  'up_down', False)
                 self.is_climbing = False
- 
-                time.sleep(0.25)
-                if self.left_down == False and self.right_down == False and self.prev_direction != '':
-                        print(f'self.prev_direction : {self.prev_direction}')
-                        if self.prev_direction =='right':
-                            self.right_down = True
-                            pyautogui.press('right') 
-                        else:
-                            self.left_down = True
-                            pyautogui.press('left') 
+                if success == False:
+                    df = 1 if utils.bernoulli(0.5) else -1
+                    self._nudge_toward(target_x - df)
+                # time.sleep(0.05)
+                # if self.left_down == False and self.right_down == False and self.prev_direction != '':
+                #         print(f'self.prev_direction : {self.prev_direction}')
+                #         if self.prev_direction =='right':
+                #             self.right_down = True
+                #             pyautogui.press('right') 
+                #         else:
+                #             self.left_down = True
+                #             pyautogui.press('left') 
             return success
 
         return True

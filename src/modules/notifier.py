@@ -95,9 +95,11 @@ class Notifier:
                 
                 if others != prev_others:
                     if others > prev_others:
-                        print("OTHER!")
+                        config.appear_other = True
                         self._ping('ding')
                     prev_others = others
+                elif others == 0:
+                    config.appear_other = False
 
                 # is_dead = cv2.matchTemplate(frame, REVIVE_MSG_TEMPLATE, cv2.TM_CCOEFF_NORMED) 
 

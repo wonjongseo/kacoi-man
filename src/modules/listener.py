@@ -184,7 +184,7 @@ class Listener:
                 #     time.sleep(0.2)
                 #     continue
             except Exception:
-                pass
+                continue
 
             now = time.time()
             since = now - self._last_cast_ts

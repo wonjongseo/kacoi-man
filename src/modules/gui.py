@@ -9,7 +9,8 @@ from src.gui import Monitor, Edit, Settings
 class GUI:
     DISPLAY_FRAME_RATE = 30
     RESOLUTIONS = {
-        'DEFAULT': '800x800',
+        'DEFAULT': '800x700',
+        '게임 설정' : '800x800',
         '루틴 설정': '1000x800'
     }
     def __init__(self):
@@ -17,6 +18,16 @@ class GUI:
         self.root = tk.Tk()
         self.root.title("원가네 헬퍼")
         self.root.geometry(GUI.RESOLUTIONS['DEFAULT'])
+        screen_w = self.root.winfo_screenwidth()
+        screen_h = self.root.winfo_screenheight()
+
+# 오른쪽 상단 위치 계산
+        x = config.SCREEN_WIDTH
+        y = 0   # 맨 위
+
+        self.root.geometry(f"{800}x{700}+{x}+{y}")
+
+
         self.root.resizable(False, False)
 
         self.navigation = ttk.Notebook(self.root)
