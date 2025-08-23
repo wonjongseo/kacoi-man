@@ -8,7 +8,6 @@ import pygame
 import threading
 import numpy as np
 import keyboard as kb
-from src.routine.components import Point
 
 # Other players' symbols on the minimap
 OTHER_RANGES = (

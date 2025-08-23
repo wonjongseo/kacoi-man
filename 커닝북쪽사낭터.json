@@ -31,8 +31,65 @@
     "end_y": 86
   },
   {
+    "action": "move",
+    "x": 53,
+    "y": 86
+  },
+  {
     "action": "down",
     "x": 60,
     "y": 86
+  },
+  {
+    "action": "move",
+    "x": 82,
+    "y": 103
+  },
+  {
+    "action": "move",
+    "x": 34,
+    "y": 103
+  },
+  {
+    "action": "jump",
+    "x": 38,
+    "y": 103,
+    "count": 1,
+    "in_place": false
+  },
+  {
+    "action": "ladder",
+    "x": 38,
+    "y": 99,
+    "end_y": 86
+  },
+  {
+    "action": "move",
+    "x": 87,
+    "y": 103
+  },
+  {
+    "action": "jump",
+    "x": 81,
+    "y": 103,
+    "count": 1,
+    "in_place": false
+  },
+  {
+    "action": "ladder",
+    "x": 82,
+    "y": 99,
+    "end_y": 86
+  },
+  {
+    "action": "move",
+    "x": 63,
+    "y": 103
+  },
+  {
+    "action": "ladder",
+    "x": 70,
+    "y": 117,
+    "end_y": 103
   }
 ]

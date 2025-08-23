@@ -32,8 +32,6 @@ class Listener:
         self._alive = threading.Event()
         self._cv = threading.Condition()
 
-        
-
         self._buff_tasks: List[_BuffTask] = []
         self._buff_thread = threading.Thread(target=self._buff_loop, daemon=True)
     
@@ -155,53 +153,58 @@ class Listener:
 
     def _buff_loop(self):
         """버프 스케줄링/시전 루프 (shutdown_evt + Condition 기반)."""
-        while self._alive.is_set():
-            with self._cv:
-                if not self._buff_tasks:
-                    self._cv.wait(timeout=0.5)
+        while True:
+            if config.enabled is False:
+                time.sleep(0.1)
+                continue
+
+            while self._alive.is_set():
+                with self._cv:
+                    if not self._buff_tasks:
+                        self._cv.wait(timeout=0.5)
+                        continue
+                    now = time.time()
+                    finite_tasks = [t for t in self._buff_tasks if math.isfinite(t.next_at)]
+                    if finite_tasks:
+                        due = min(t.next_at for t in finite_tasks)
+                        # 너무 큰 값 방지용 캡(최대 5초만 대기)
+                        timeout = max(0.0, min(5.0, due - now))
+                    else:
+                        # 아직 prime되지 않은 상태(모두 inf) → 짧게만 대기
+                        timeout = 0.5
+                    self._cv.wait(timeout=timeout)
+
+                if not self._alive.is_set():
+                    break
+
+                # 3) 봇이 꺼져있다면 대기
+                if not config.enabled:
+                    time.sleep(0.2)
                     continue
+
+            
+                while time.time() < config.bot.attack_anim_until:
+                        time.sleep(0.02)
+
                 now = time.time()
-                finite_tasks = [t for t in self._buff_tasks if math.isfinite(t.next_at)]
-                if finite_tasks:
-                    due = min(t.next_at for t in finite_tasks)
-                    # 너무 큰 값 방지용 캡(최대 5초만 대기)
-                    timeout = max(0.0, min(5.0, due - now))
-                else:
-                    # 아직 prime되지 않은 상태(모두 inf) → 짧게만 대기
-                    timeout = 0.5
-                self._cv.wait(timeout=timeout)
+                since = now - self._last_cast_ts
+                if since < 1.0:
+                    time.sleep(1.0 - since)
+                    continue
 
-            if not self._alive.is_set():
-                break
-
-            # 3) 봇이 꺼져있다면 대기
-            if not config.enabled:
-                time.sleep(0.2)
-                continue
-
-           
-            while time.time() < config.bot.attack_anim_until:
-                    time.sleep(0.02)
-
-            now = time.time()
-            since = now - self._last_cast_ts
-            if since < 1.0:
-                time.sleep(1.0 - since)
-                continue
-
-            fired = False
-            for t in self._buff_tasks:
-                if t.next_at <= time.time():
-                    self._fire_buff(t)
-                    now2 = time.time()
-                    t.last_at = now2
-                    t.next_at = now2 + t.cooldown
-                    self._last_cast_ts = now2  # 전역 간격 갱신
-                    fired = True
-                    break  # 한 번에 하나만
-            if not fired:
-                # 혹시라도 모든 next_at이 미래이면 살짝 쉼
-                time.sleep(0.05)
+                fired = False
+                for t in self._buff_tasks:
+                    if t.next_at <= time.time():
+                        self._fire_buff(t)
+                        now2 = time.time()
+                        t.last_at = now2
+                        t.next_at = now2 + t.cooldown
+                        self._last_cast_ts = now2  # 전역 간격 갱신
+                        fired = True
+                        break  # 한 번에 하나만
+                if not fired:
+                    # 혹시라도 모든 next_at이 미래이면 살짝 쉼
+                    time.sleep(0.05)
 
     def _fire_buff(self, task: _BuffTask):
         """실제 키 입력. keyboard 실패 시 pyautogui로 백업."""

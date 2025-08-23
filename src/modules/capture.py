@@ -236,10 +236,14 @@ class Capture:
                 minimap = self.frame[ mm_tl[1]:mm_br[1], mm_tl[0]:mm_br[0] ]
                 player = utils.multi_match(minimap, PLAYER_TEMPLATE, threshold=0.8)
                 
+
+                config.margin_tl = self.window['left'] + mm_tl[0]
+                config.margin_tr = self.window['top']  + mm_tl[1] 
+
+
                 if player:
-                    config.player_pos = utils.convert_to_relative(player[0], minimap)
-                    config.player_pos_ab = (self.window['left'] + mm_tl[0] + player[0][0], self.window['top']  + mm_tl[1] + player[0][1])
-                
+                    config.player_pos_ab = (config.margin_tl + player[0][0], config.margin_tr + player[0][1])
+
                 frame_h, frame_w = self.frame.shape[:2]
                 cropped_frame = self.frame[0:frame_h+100, :]
                 PLAYER_NAME_TEMPLATE =  cv2.imread(config.setting_data.templates.character.name, 0)
@@ -249,12 +253,11 @@ class Capture:
                     x , y = utils.center_from_bounds(*player_name)
                     config.player_name_pos = (x, y - PLAYER_HEIGHT // 2)
                 
-                # GUI나 다른 모듈이 쓸 수 있도록 패키징
+               
                 self.minimap = {
                     'minimap':      minimap,
                     'path':         config.path,
-                    'player_pos':   config.player_pos,
-                    'player_name_pos':   config.player_name_pos
+                    'player_name_pos':   config.player_name_pos,
                 }
 
                 if not self.ready:

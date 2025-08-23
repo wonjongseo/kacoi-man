@@ -39,8 +39,8 @@ class Bot:
 
         # 튜닝 파라미터
         self._stuck_eps_px = 1.0           # 이 픽셀 이하로만 움직이면 "안 움직임"으로 간주
-        self._stuck_confirm_sec = 0.15     # 이 시간 이상 정체면 막힘 확정
-        self._jump_cooldown = 0.01          # 점프 시도 간 최소 간격(스팸 방지)
+        self._stuck_confirm_sec = 3     # 이 시간 이상 정체면 막힘 확정
+        self._jump_cooldown = 5         # 점프 시도 간 최소 간격(스팸 방지)
         # self._last_jump_t = 0.0
 
         self.is_climbing = False          # 등반 중(부착~해제)
@@ -304,6 +304,7 @@ class Bot:
                     continue
                         
                 else:
+                    self._ensure_key('z', 'z_down', True)
                     wp = config.routine.current_wp()
                     target_x, target_y, act = wp.x, wp.y, wp.action
                     cur_x, cur_y = config.player_pos_ab
@@ -484,7 +485,7 @@ class Bot:
             tol = 0 if wp.in_place else (2 if self.prev_action == 'ladder' else 5)
             return dx <= tol
         elif wp.action == "down":
-            tol = 1
+            tol = 3
             return dx <= tol
         else:
             hit=  dx <= 5 and dy <= 5

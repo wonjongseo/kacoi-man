@@ -8,11 +8,12 @@ RESOURCES_DIR = 'resources'
 
 IS_TEST = True
 
+margin_tl = (0, 0)
+margin_tr = (0, 0)
 #################################
 #       Global Variables        #
 #################################
 # The player's position relative to the minimap
-player_pos = (0, 0)
 player_pos_ab = (0, 0)
 player_name_pos = None
 

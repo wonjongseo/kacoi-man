@@ -72,7 +72,7 @@ class FrontROIMonitor(ttk.Frame):
             facing_right = bool(getattr(bot, "right_down", False)) if bot else False
 
         if not (facing_left ^ facing_right):
-            self.info.set("ROI: 정면/방향 불명(왼/오 동시 또는 없음)")
+            self.info.set("좌우 방향 키보드를 눌러서 공격 범위를 확인할 수 있습니다.")
             self._draw_image_only(img_rgb)
             return
 

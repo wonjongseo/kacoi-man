@@ -307,13 +307,12 @@ class Settings(Tab):
         self.btn_reset.grid(row=0, column=4, padx=(6,0),  pady=(0,6))
 
         self._create_required_feild(1)
-        self._create_template_images_feild(2)
+        # self._create_template_images_feild(2)
         self._create_attack_range_feild(3)
         self._create_potion_feild(4)
         self._create_buff_feild(5)
 
         self._init_locking_support()
-
 
     def _init_locking_support(self):
         """잠글 대상 위젯 수집 + 콤보박스 원래 상태 보관."""
@@ -503,7 +502,6 @@ class Settings(Tab):
         self.var_rng_up.set(dv.RANGE_UP)
         self.var_rng_down.set(dv.RANGE_DOWN)
         self.var_misc_revive.set("")
-
         
         for v in (self.var_mm_tl, self.var_mm_br, self.var_mm_me, self.var_mm_other, self.var_chr_hp, self.var_chr_mp, self.var_chr_name):
             v.set("")

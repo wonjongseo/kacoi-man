@@ -1,5 +1,4 @@
 
-from src.routine.components import Point
 
 route_ptrol = [
   {
