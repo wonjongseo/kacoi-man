@@ -1,5 +1,5 @@
 {
-  "monster_dir": "C:/Users/visio/Desktop/develop/jonggack_macro/assets/monsters/kurning_city/north_work_top",
+  "monster_dir": "C:/Users/visio/Desktop/develop/jonggack_macro/assets/monsters/east_rock_mountine6",
   "hp_pct": 50,
   "mp_pct": 30,
   "hp_key": "del",
@@ -30,8 +30,12 @@
   },
   "buffs": [
     {
-      "cooldown_sec": 100,
+      "cooldown_sec": 200,
       "key": "home"
+    },
+     {
+      "cooldown_sec": 300,
+      "key": "Insert"
     }
   ]
 }

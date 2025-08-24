@@ -120,6 +120,7 @@ class Listener:
             return
 
         config.enabled = not config.enabled
+        config.gui.monitor.set_enable()
         if config.enabled:
             handle_windows.activate_window(config.TITLE)
             config.gui.monitor.refresh_routine()

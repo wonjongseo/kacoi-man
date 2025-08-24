@@ -3,7 +3,7 @@ import threading
 import time
 import pyautogui
 from src.common import config, utils, default_value as df
-
+from contextlib import contextmanager
 class RoutePatrol:
     def __init__(self, items):
         self.items = items
@@ -15,6 +15,25 @@ class RoutePatrol:
     def advance(self):
         self.index = (self.index + 1) % len(self.items)
         config.gui.monitor.refresh_routine(current_index = self.index)
+
+
+_pyauto_lock = threading.RLock()  # 모든 pyautogui 조작을 이 락으로 보호 권장
+
+@contextmanager
+def _disable_failsafe_safely():
+    with _pyauto_lock:
+        old = pyautogui.FAILSAFE
+        pyautogui.FAILSAFE = False
+        try:
+            yield
+        finally:
+            pyautogui.FAILSAFE = old
+
+def _move_to_safe_center():
+    # 멀티 모니터/스케일링 고려해서 현재 주 모니터 사이즈로 계산
+    w, h = pyautogui.size()
+    cx, cy = max(50, w // 2), max(50, h // 2)  # 모서리 안전 여유
+    pyautogui.moveTo(cx, cy, duration=0.05)
 
 
 class Bot:
@@ -70,6 +89,13 @@ class Bot:
 
         self._attack_anim_sec = getattr(config.setting_data, 'attack_anim_sec', 0.35)  # 모션 길이(초)
         self.attack_anim_until = 0.0  # 모션이 끝나는 시각
+
+
+        # Bot.__init__ 안
+        self._drop_verify_timeout = 0.50   # 아래점프 후 관찰 시간(초)
+        self._drop_verify_eps_px  = 3      # '내려갔다'로 인정할 최소 y 증가폭(px) - y가 아래로 갈수록 값 커진다고 가정
+
+
 
         self.input_lock = threading.RLock()
         config.input_lock = self.input_lock
@@ -314,7 +340,6 @@ class Bot:
                     dx_abs = abs(dx)
                     dy_abs = abs(dy)
 
-                    # 공격 가능 여부는 "거리"로 결정
                     
                     self.can_attack = not self.up_down
                     if act != "down" and (target_y > cur_y + 6):
@@ -355,13 +380,20 @@ class Bot:
 
                     time.sleep(0.15)
             except pyautogui.FailSafeException:
-                pyautogui.FAILSAFE = False
-                try:
-                    self.release_all_keys()
-                    pyautogui.moveTo(config.SCREEN_WIDTH, config.SCREEN_HEIGHT)
-                finally:
-                    pyautogui.FAILSAFE = True     # 2) 다시 켜 주기
-                time.sleep(1)  
+                print("[FAILSAFE] 모서리 감지 → 안전 복구 시도")
+                # (선택) 다른 스레드도 pyautogui 호출 잠깐 멈추게 플래그/이벤트로 알림
+                # self.stop_event.set()
+
+                with _disable_failsafe_safely():
+                    try:
+                        self.release_all_keys()   # keyUp 정리 (여기도 pyautogui 호출 → 락 안에서)
+                        _move_to_safe_center()    # 코너 대신 중앙으로 이동
+                    finally:
+                        pass  # FAILSAFE는 컨텍스트 매니저가 자동 복구
+
+                # (선택) 약간 대기 후 재개
+                time.sleep(0.3)
+                # self.stop_event.clear()
                 
 
     def move_toward(self, target_x, action):
@@ -479,10 +511,17 @@ class Bot:
         hit = False
         
         if wp.action == "ladder":
-            tol = 0  if not (self.left_down or self.right_down) else df.REACH_LADDER_MOVING
+            if not (self.left_down or self.right_down):
+                tol = 0
+            else:
+                if self.prev_action == "jump" :
+                    tol = 0
+                else:    
+                    tol = df.REACH_LADDER_MOVING 
+            # tol = 0  if not (self.left_down or self.right_down) else df.REACH_LADDER_MOVING
             hit=  dx <= tol
         elif wp.action == "jump":
-            tol = 0 if wp.in_place else (2 if self.prev_action == 'ladder' else 5)
+            tol = 0 if wp.in_place else (1 if self.prev_action == 'ladder' else 5)
             return dx <= tol
         elif wp.action == "down":
             tol = 3
@@ -493,13 +532,10 @@ class Bot:
         return hit
     
     def do_action(self,  wp=None):
-        if self.found_monster :
-            return
         if wp.action == "jump":
             in_place = getattr(wp, "in_place", False)
             cnt = wp.count
             if in_place:
-                # 움직임 키 완전히 해제하고 제자리 점프만
                 self._ensure_key('left',  'left_down',  False)
                 self._ensure_key('right', 'right_down', False)
                 self._ensure_key(self.attack_key, 'shift_down', False)
@@ -510,13 +546,15 @@ class Bot:
                 for _ in range(cnt):
                     pyautogui.press(self.jump_key)
                     time.sleep(0.5)
-                print("RETURN")
                 return True
             else:
                 # 이동 점프(횟수만큼)
                 for _ in range(cnt):
                     pyautogui.press(self.jump_key)
-                    time.sleep(0.5)
+                    self._ensure_key('left',  'left_down',  False)
+                    self._ensure_key('right', 'right_down', False)
+                    time.sleep(0.5) # 점프 후 멈추는 시간 
+
                 return True
         
         elif wp.action == "ladder":
@@ -603,7 +641,15 @@ class Bot:
         return True
     
     def drop_down(self):
-        """↓+Jump(Alt)로 아래 플랫폼으로 내려가기 — 공격키/방향키와 충돌 방지"""
+        """↓+Jump(Alt)로 아래 플랫폼으로 내려가기 — 공격키/방향키와 충돌 방지
+        내려가지 않았으면 sync_waypoint_to_y()를 호출한다.
+        """
+        # 현재 y 기록 (검증용)
+        start_y = None
+        pos = config.player_pos_ab
+        if pos:
+            _, start_y = pos
+
         # 공격키/점프키 동시 입력 방지
         pyautogui.keyUp(self.attack_key)
         self.shift_down = False
@@ -614,10 +660,36 @@ class Bot:
         if self.right_down:
             pyautogui.keyUp('right'); self.right_down = False
 
+        # ↓ + 점프(단발)
         pyautogui.keyDown('down')
         pyautogui.press(self.jump_key)   # Alt 단발
         time.sleep(0.12)
         pyautogui.keyUp('down')
+
+        # --- 여기서 '정말 내려갔는지' 짧게 관찰 ---
+        if start_y is None:
+            return  # 위치를 모르면 검증 스킵
+
+        deadline = time.time() + self._drop_verify_timeout
+        moved_down = False
+
+        while time.time() < deadline:
+            pos = config.player_pos_ab
+            if pos:
+                _, cur_y = pos
+                # y가 아래로 갈수록 커진다고 가정: 충분히 증가했으면 성공
+                if cur_y > start_y + self._drop_verify_eps_px:
+                    moved_down = True
+                    break
+            time.sleep(0.02)  # 너무 빡세지 않게 폴링
+
+        if not moved_down:
+            # 일정 시간 관찰했는데 y가 안 내려갔다면 - 동기화 시도
+            try:
+                self.sync_waypoint_to_y()
+            except Exception as e:
+                print(f"[WARN] sync_waypoint_to_y() failed: {e}")
+
     def mark_attack(self, anim_sec=None):
         sec = anim_sec or self._attack_anim_sec
         now = time.time()
