@@ -335,13 +335,18 @@ class Capture:
                     back_found  = self._has_monster(back_gray,  MONSTER_TEMPLATES, threshold=0.7)
                     front_found = self._has_monster(front_gray, MONSTER_TEMPLATES, threshold=0.7)
                     
-                    if back_found:
+                    if front_found and back_found:
+                        config.bot.found_monster = True
+                        config.bot.monster_dir = 'front'
+                        self._attack_immediate('front')
+                        # utils.capture_minimap(fx1, fy1, fx2, fy2)
+                    elif front_found == False and back_found:
                         config.bot.found_monster = True
                         config.bot.monster_dir = 'back'
                         # 즉시 공격
                         self._attack_immediate('back')
                         # utils.capture_minimap(bx1, by1, bx2, by2)  # 디버그 필요 시만
-                    elif front_found:
+                    elif front_found and back_found == False :
                         config.bot.found_monster = True
                         config.bot.monster_dir = 'front'
                         self._attack_immediate('front')

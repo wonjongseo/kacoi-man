@@ -1,11 +1,11 @@
-
-
 {
   "monster_dir": "C:/Users/ayane/Desktop/jongseo/kacoi-man/assets/monsters/east_rock_mountine6",
   "hp_pct": 35,
   "mp_pct": 35,
   "hp_key": "del",
   "mp_key": "end",
+  "jump_key": "alt",
+  "attack_key": "shift",
   "attack_range": {
     "front": 365,
     "back": 0,
@@ -22,20 +22,20 @@
     "character": {
       "hp_bar": "C:/Users/ayane/Desktop/jongseo/kacoi-man/assets/hp_bar.png",
       "mp_bar": "C:/Users/ayane/Desktop/jongseo/kacoi-man/assets/mp_bar.png",
-      "name": "C:/Users/ayane/Desktop/jongseo/kacoi-man/assets/charactor.png"
+      "name": "C:/Users/ayane/Desktop/jongseo/kacoi-man/assets/charactor2.png"
     },
     "misc": {
       "revive_message": ""
     }
-  }, "buffs": [
+  },
+  "buffs": [
     {
       "cooldown_sec": 200,
       "key": "home"
     },
-     {
+    {
       "cooldown_sec": 300,
       "key": "Insert"
     }
-     
   ]
 }

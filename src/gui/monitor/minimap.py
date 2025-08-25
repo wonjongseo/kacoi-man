@@ -61,14 +61,14 @@ class Minimap(LabelFrame):
         if not minimap or ('minimap' in minimap is False) or len(minimap['minimap']) == 0:
             # utils.display_message("확인", "미니맵이 확인되지 않습니다.\n미니맵을 확인 후 다시 적용해주세요.")
             return
-        
-        for i, wp in enumerate(config.routine.items):
-            color = (0, 255, 0)     
-            radius = 3
-            if i == config.routine.index:            
-                color = (0, 255, 255)  
-                radius = 4              
-            cv2.circle(minimap['minimap'], (wp.x - config.margin_tl,  wp.y - config.margin_tr), radius, color, 1)
+        if config.routine is not None:
+            for i, wp in enumerate(config.routine.items):
+                color = (0, 255, 0)     
+                radius = 3
+                if i == config.routine.index:            
+                    color = (0, 255, 255)  
+                    radius = 4              
+                cv2.circle(minimap['minimap'], (wp.x - config.margin_tl,  wp.y - config.margin_tr), radius, color, 1)
             # 테두리만: 두께 2px, 안티에일리어싱
         # ----- 이미지 처리 -----
         img = cv2.cvtColor(minimap['minimap'], cv2.COLOR_BGR2RGB)
