@@ -3,6 +3,7 @@ import json
 import os
 import threading
 import time
+from src.common.pyauto_guard import patch_pyautogui
 from src.gui.settings.frontROIMonitor import FrontROIMonitor
 from src.modules.bot import Bot
 from src.modules.capture import Capture
@@ -76,13 +77,13 @@ class Settings(Tab):
         entry_attack.grid(row=0, column=1, sticky="ew", padx=(0, 8))
     def _create_potion_feild(self,row_index):
         # 포션 임계치
-        frm_potion = ttk.LabelFrame(self, text="포션 사용 임계치 (%)")
+        frm_potion = ttk.LabelFrame(self, text="HP/MP")
         frm_potion.grid(row=row_index, column=0, sticky="ew", padx=4, pady=(0,10))
         # 가로 칼럼 늘리기 (퍼센트 + 키 2쌍을 위해)
         frm_potion.columnconfigure(1, weight=1)
         frm_potion.columnconfigure(4, weight=1)
 
-        ttk.Label(frm_potion, text="최소 HP 물약 사용 %")\
+        ttk.Label(frm_potion, text="HP 물약 사용 %")\
             .grid(row=0, column=0, sticky="w", padx=8, pady=(8,4))
         ttk.Spinbox(frm_potion, from_=0, to=100, textvariable=self.var_hp_pct, width=6, justify="right")\
             .grid(row=0, column=1, sticky="w", pady=(8,4))
@@ -93,7 +94,7 @@ class Settings(Tab):
             .grid(row=0, column=4, sticky="w", padx=(0,8), pady=(8,4))
 
 
-        ttk.Label(frm_potion, text="최소 MP 물약 사용 %")\
+        ttk.Label(frm_potion, text="MP 물약 사용 %")\
             .grid(row=1, column=0, sticky="w", padx=8, pady=(0,8))
         ttk.Spinbox(frm_potion, from_=0, to=100, textvariable=self.var_mp_pct, width=6, justify="right")\
             .grid(row=1, column=1, sticky="w", pady=(0,8))
@@ -624,6 +625,9 @@ class Settings(Tab):
         try:
             shutdown_evt = config.macro_shutdown_evt
             self.after(0, self._show_stopping_dialog)
+
+            patch_pyautogui()
+
 
             # 인스턴스 생성 + 전역 등록
             config.bot = Bot()      # ← 없다면 생성 후 속성으로 주입

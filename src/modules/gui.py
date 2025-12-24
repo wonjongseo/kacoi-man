@@ -10,8 +10,8 @@ class GUI:
     DISPLAY_FRAME_RATE = 30
     RESOLUTIONS = {
         'DEFAULT': '800x700',
-        '게임 설정' : '800x900',
-        '루틴 설정': '1000x800'
+        '게임 설정' : '800x700',
+        '루틴 설정': '1000x700'
     }
     def __init__(self):
         config.gui = self

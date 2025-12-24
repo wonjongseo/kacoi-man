@@ -8,6 +8,7 @@ RESOURCES_DIR = 'resources'
 
 IS_TEST = True
 
+
 margin_tl = (0, 0)
 margin_tr = (0, 0)
 #################################

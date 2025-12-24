@@ -66,24 +66,15 @@ def load_json_file(path: str):
 
 
 def _resolve_path_if_any(app_dir: str, candidate: Optional[str]) -> Optional[str]:
-    """
-    candidate가 주어지면:
-      - 절대경로면 그대로 사용
-      - 상대경로면 app_dir 기준으로 합침
-    candidate가 None/빈값이면 None 반환 (기본 파일명 절대 사용하지 않음)
-    """
+  
     if not candidate:
         return None
     candidate = os.path.expanduser(candidate)
+    candidate += '.json'
     return candidate if os.path.isabs(candidate) else os.path.join(app_dir, candidate)
 
 
 def init_settings():
-    """
-    앱 시작 시 setup.txt(1,2행)만 사용하여 경로 결정.
-    - setup.txt가 없으면 둘 다 None
-    - 기본 파일명(game_setting.json / default_routine.json)은 절대 사용하지 않음(존재해도 무시)
-    """
     app_dir = get_app_dir()
     line1, line2 = read_setup_first_two_lines()
 

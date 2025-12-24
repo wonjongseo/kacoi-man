@@ -190,13 +190,12 @@ def center_from_bounds(top_left, bottom_right):
 
 
 def load_templates(folder):
-
     def safe_imread(path, flags=cv2.IMREAD_GRAYSCALE):
         p = Path(path)
         if not p.exists():
             display_message("[ERROR]", f"파일 없음: {p}" )
             return None
-        img = cv2.imread(str(p), flags)
+        img = imread_u(str(p), flags)
         if img is None:
             display_message("[ERROR]", f"이미지 로드 실패(손상/포맷 문제): {p}" )
         return img
@@ -282,6 +281,13 @@ def validate_input(value):
         return result
     
     return result
+
+
+def imread_u(path: str, flags=cv2.IMREAD_COLOR):
+    with open(path, 'rb') as f:
+        data = np.frombuffer(f.read(), dtype=np.uint8)
+    img = cv2.imdecode(data, flags)
+    return img
 
 
 

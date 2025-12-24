@@ -1,0 +1,66 @@
+[
+  {
+    "action": "move",
+    "x": 69,
+    "y": 148
+  },
+  {
+    "action": "ladder",
+    "x": 41,
+    "y": 145,
+    "end_y": 112
+  },
+  {
+    "action": "move",
+    "x": 77,
+    "y": 112
+  },
+  {
+    "action": "ladder",
+    "x": 67,
+    "y": 111,
+    "end_y": 92
+  },
+  {
+    "action": "move",
+    "x": 45,
+    "y": 92
+  },
+  {
+    "action": "ladder",
+    "x": 55,
+    "y": 92,
+    "end_y": 79
+  },
+  {
+    "action": "ladder",
+    "x": 70,
+    "y": 80,
+    "end_y": 69
+  },
+  {
+    "action": "move",
+    "x": 122,
+    "y": 67
+  },
+  {
+    "action": "move",
+    "x": 108,
+    "y": 92
+  },
+  {
+    "action": "move",
+    "x": 110,
+    "y": 111
+  },
+  {
+    "action": "move",
+    "x": 118,
+    "y": 130
+  },
+  {
+    "action": "move",
+    "x": 107,
+    "y": 148
+  }
+]

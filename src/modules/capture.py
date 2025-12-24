@@ -272,18 +272,7 @@ class Capture:
                     px, py = config.player_name_pos  # px = X, py = Y
                     front, back, up, down = config.setting_data.attack_range
                     
-                    # if config.bot.left_down and config.bot.right_down == False:
-                    #     x1, x2 = max(0, px - front), px + back
-                    # elif config.bot.right_down and config.bot.left_down == False:
-                    #     x1, x2 = px - back, min(self.frame.shape[1], px + front)
-                    # else: 
-                    #     config.bot.found_monster = False
-                    #     continue
                     
-                    # y1 = max(0, py - up)
-                    # y2 = min(self.frame.shape[0], py + down)
-
-                    # x1, x2, y1, y2 = map(int, (x1, x2, y1, y2))
                     H, W = self.frame.shape[:2]
 
                     facing_left  = (config.bot.left_down  and not config.bot.right_down)
@@ -339,7 +328,7 @@ class Capture:
                         config.bot.found_monster = True
                         config.bot.monster_dir = 'front'
                         self._attack_immediate('front')
-                        # utils.capture_minimap(fx1, fy1, fx2, fy2)
+                        utils.capture_minimap(fx1, fy1, fx2, fy2)
                     elif front_found == False and back_found:
                         config.bot.found_monster = True
                         config.bot.monster_dir = 'back'

@@ -1,0 +1,71 @@
+[
+  {
+    "action": "ladder",
+    "x": 41,
+    "y": 145,
+    "end_y": 112
+  },
+  {
+    "action": "move",
+    "x": 79,
+    "y": 112
+  },
+  {
+    "action": "ladder",
+    "x": 67,
+    "y": 111,
+    "end_y": 92
+  },
+  {
+    "action": "move",
+    "x": 40,
+    "y": 92
+  },
+  {
+    "action": "ladder",
+    "x": 55,
+    "y": 92,
+    "end_y": 79
+  },
+  {
+    "action": "ladder",
+    "x": 70,
+    "y": 80,
+    "end_y": 69
+  },
+  {
+    "action": "move",
+    "x": 124,
+    "y": 67
+  },
+  {
+    "action": "move",
+    "x": 110,
+    "y": 92
+  },
+  {
+    "action": "move",
+    "x": 95,
+    "y": 92
+  },
+  {
+    "action": "move",
+    "x": 119,
+    "y": 111
+  },
+  {
+    "action": "move",
+    "x": 95,
+    "y": 130
+  },
+  {
+    "action": "move",
+    "x": 106,
+    "y": 148
+  },
+  {
+    "action": "move",
+    "x": 72,
+    "y": 148
+  }
+]

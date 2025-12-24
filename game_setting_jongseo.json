@@ -1,0 +1,41 @@
+{
+  "monster_dir": "C:/Users/visio/Desktop/develop/jonggack_macro/assets/monsters/동쪽바위산6",
+  "hp_pct": 50,
+  "mp_pct": 30,
+  "hp_key": "del",
+  "mp_key": "end",
+  "jump_key": "alt",
+  "attack_key": "shift",
+  "attack_range": {
+    "front": 365,
+    "back": 0,
+    "up": 100,
+    "down": 100
+  },
+  "templates": {
+    "minimap": {
+      "top_left": "C:/Users/visio/Desktop/develop/jonggack_macro/assets/minimap_topLeft.png",
+      "bottom_right": "C:/Users/visio/Desktop/develop/jonggack_macro/assets/minimap_bottomRight.png",
+      "player": "C:/Users/visio/Desktop/develop/jonggack_macro/assets/me.png",
+      "other": "C:/Users/visio/Desktop/develop/jonggack_macro/assets/other.png"
+    },
+    "character": {
+      "hp_bar": "C:/Users/visio/Desktop/develop/jonggack_macro/assets/hp_bar.png",
+      "mp_bar": "C:/Users/visio/Desktop/develop/jonggack_macro/assets/mp_bar.png",
+      "name": "C:/Users/visio/Desktop/develop/jonggack_macro/assets/charactor.png"
+    },
+    "misc": {
+      "revive_message": ""
+    }
+  },
+  "buffs": [
+    {
+      "cooldown_sec": 200,
+      "key": "home"
+    },
+     {
+      "cooldown_sec": 300,
+      "key": "Insert"
+    }
+  ]
+}
