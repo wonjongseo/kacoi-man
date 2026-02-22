@@ -252,19 +252,32 @@ def validate_input(value):
     
     # 문자열일 경우
     if isinstance(value, str):
-        # 폴더 경로인지 확인
-        if os.path.isdir(value):
-            result["is_folder"] = True
-            result["valid"] = True
+        v = value.strip()
+        if not v:
             return result
 
-        # 이미지 파일 경로인지 확인
-        if os.path.isfile(value):
-            ext = os.path.splitext(value)[1].lower()
-            if ext in [".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tiff"]:
-                result["is_image_file"] = True
+        # Allow both cwd-relative and project/resource-relative paths.
+        candidates = []
+        for p in (v, resource_path(v)):
+            rp = str(Path(p).resolve())
+            if rp not in candidates:
+                candidates.append(rp)
+
+        # 폴더 경로인지 확인
+        for p in candidates:
+            if os.path.isdir(p):
+                result["is_folder"] = True
                 result["valid"] = True
                 return result
+
+        # 이미지 파일 경로인지 확인
+        for p in candidates:
+            if os.path.isfile(p):
+                ext = os.path.splitext(p)[1].lower()
+                if ext in [".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tiff"]:
+                    result["is_image_file"] = True
+                    result["valid"] = True
+                    return result
         
         # 문자열이 숫자로 변환 가능한지 확인
         try:

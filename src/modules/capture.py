@@ -29,6 +29,7 @@ MINIMAP_BOTTOM_BORDER = 0 #9
 
 WINDOWED_OFFSET_TOP = 0
 WINDOWED_OFFSET_LEFT = 0
+ATTACK_DEADZONE_X = 20
 
 PLAYER_INFO_TOP = 620
 
@@ -318,6 +319,14 @@ class Capture:
 
                     fy1, fy2 = py - up, py + down
                     by1, by2 = fy1, fy2
+
+                    # Exclude near-player area where attacks often miss (too close to hitbox origin).
+                    if facing_left:
+                        fx2 = min(fx2, px - ATTACK_DEADZONE_X)
+                        bx1 = max(bx1, px + ATTACK_DEADZONE_X)
+                    elif facing_right:
+                        fx1 = max(fx1, px + ATTACK_DEADZONE_X)
+                        bx2 = min(bx2, px - ATTACK_DEADZONE_X)
 
                     # Clamp ROI coordinates to frame bounds.
                     fx1 = max(0, int(fx1)); fy1 = max(0, int(fy1))

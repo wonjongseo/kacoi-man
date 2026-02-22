@@ -259,8 +259,6 @@ class Bot:
         if config.macro_shutdown_evt:
             config.macro_shutdown_evt.set()
 
-        # if self.thread and self.thread.is_alive():
-        #     self.thread.join(timeout=2)
 
     def _main(self):
         self.ready = True
@@ -302,7 +300,6 @@ class Bot:
                     self.can_attack = not self.up_down
                     
                     if wp.action != "down" and (wp.y > cur_y + 6):
-                        print(f'wp.y, cur_y : {wp.y}, {cur_y}')
                         
                         now = time.time()
                         if (now - self._last_drop_t) >= self._drop_cooldown:
@@ -312,14 +309,11 @@ class Bot:
                         time.sleep(0.15)
                     
                     elif wp.y + 6 < cur_y:
-                        print("??")
                         if wp.action != "ladder":
-                            print("???")
                             self.sync_waypoint_to_y()
                             
                         else:
                             if (not self.up_down) and (dx_abs > 12 or dy_abs > 6):
-                                print("????")
                                 self.sync_waypoint_to_y()
                                 
                     

@@ -565,6 +565,8 @@ class Settings(Tab):
         if self._range_popup and self._range_popup.winfo_exists():
             self._range_popup.destroy()
             self._range_popup = None    
+        # Normalize to absolute path so execution directory differences do not break folder loading.
+        cfg.monster_dir = utils.resource_path(cfg.monster_dir)
         config.setting_data = cfg
         config.gui.monitor.refresh_routine()
         config.gui.monitor.refresh_labels()

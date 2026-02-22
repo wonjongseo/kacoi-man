@@ -22,7 +22,7 @@
     "character": {
       "hp_bar": "assets/hp_bar.png",
       "mp_bar": "assets/mp_bar.png",
-      "name": "assets/charactor2.png"
+      "name": "assets/charactor.png"
     },
     "misc": {
       "revive_message": ""
