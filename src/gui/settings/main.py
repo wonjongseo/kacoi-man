@@ -75,6 +75,28 @@ class Settings(Tab):
         ttk.Label(frm_attack, text="공격 키").grid(row=0, column=0, sticky="w", padx=(0, 4))
         entry_attack = ttk.Entry(frm_attack, textvariable=self.var_attack_key)
         entry_attack.grid(row=0, column=1, sticky="ew", padx=(0, 8))
+
+        # [Row 2][Col 0] 텔레포트 키
+        frm_tp_key = ttk.Frame(frm_required)
+        frm_tp_key.grid(row=2, column=0, sticky="ew", padx=(8, 4), pady=(0, 8))
+        frm_tp_key.columnconfigure(1, weight=1)
+        ttk.Label(frm_tp_key, text="텔레포트 키").grid(row=0, column=0, sticky="w", padx=(0, 4))
+        ttk.Entry(frm_tp_key, textvariable=self.var_teleport_key).grid(row=0, column=1, sticky="ew", padx=(0, 8))
+
+        # [Row 2][Col 1] 몬스터 없음 텔레포트 주기(초)
+        frm_tp_cd = ttk.Frame(frm_required)
+        frm_tp_cd.grid(row=2, column=1, sticky="ew", padx=(4, 8), pady=(0, 8))
+        frm_tp_cd.columnconfigure(1, weight=1)
+        ttk.Label(frm_tp_cd, text="텔레포트 주기(초)").grid(row=0, column=0, sticky="w", padx=(0, 4))
+        ttk.Spinbox(
+            frm_tp_cd,
+            from_=0.1,
+            to=30.0,
+            increment=0.1,
+            textvariable=self.var_teleport_cooldown_sec,
+            width=8,
+            justify="right",
+        ).grid(row=0, column=1, sticky="w", padx=(0, 8))
     def _create_potion_feild(self,row_index):
         # 포션 임계치
         frm_potion = ttk.LabelFrame(self, text="HP/MP")
@@ -270,6 +292,8 @@ class Settings(Tab):
         # ===== Vars =====
         self.var_jump_key = tk.StringVar(value='alt')
         self.var_attack_key = tk.StringVar(value='shift')
+        self.var_teleport_key = tk.StringVar(value=dv.TELEPORT_KEY)
+        self.var_teleport_cooldown_sec = tk.DoubleVar(value=dv.TELEPORT_COOLDOWN_SEC)
 
         self.var_monster_dir = tk.StringVar()
         self.var_hp_pct = tk.IntVar(value=dv.HP_PERCENT)
@@ -378,6 +402,10 @@ class Settings(Tab):
             mp_key=(self.var_mp_key.get() or dv.MP_KEY).strip(),   # ← 추가
             jump_key = (self.var_jump_key.get() or dv.JUMP_KEY).strip(),   # ← 추가
             attack_key = (self.var_attack_key.get() or dv.ATTACK_KEY).strip(),   # ← 추가
+            teleport_key=(self.var_teleport_key.get() or dv.TELEPORT_KEY).strip(),
+            teleport_cooldown_sec=sd._clamp_float(
+                self.var_teleport_cooldown_sec.get(), 0.1, 30.0, dv.TELEPORT_COOLDOWN_SEC
+            ),
             attack_range=sd.AttackRange(
                 front=sd._clamp_int(self.var_rng_front.get(), 0, 5000, dv.RANGE_FRONT),
                 back=sd._clamp_int(self.var_rng_back.get(), 0, 5000, dv.RANGE_BACK),
@@ -417,6 +445,8 @@ class Settings(Tab):
         self.var_mp_key.set(getattr(cfg, "mp_key", dv.MP_KEY))  
         self.var_jump_key.set(getattr(cfg, "jump_key", dv.JUMP_KEY))
         self.var_attack_key.set(getattr(cfg, "attack_key", dv.ATTACK_KEY))
+        self.var_teleport_key.set(getattr(cfg, "teleport_key", dv.TELEPORT_KEY))
+        self.var_teleport_cooldown_sec.set(getattr(cfg, "teleport_cooldown_sec", dv.TELEPORT_COOLDOWN_SEC))
 
         self.var_rng_front.set(getattr(cfg.attack_range, 'front', dv.RANGE_FRONT))
         self.var_rng_back.set(getattr(cfg.attack_range, 'back', dv.RANGE_BACK))
@@ -498,6 +528,8 @@ class Settings(Tab):
         self.var_mp_key.set(dv.MP_KEY) 
         self.var_jump_key.set(dv.JUMP_KEY) 
         self.var_attack_key.set(dv.ATTACK_KEY) 
+        self.var_teleport_key.set(dv.TELEPORT_KEY)
+        self.var_teleport_cooldown_sec.set(dv.TELEPORT_COOLDOWN_SEC)
         self.var_rng_front.set(dv.RANGE_FRONT)
         self.var_rng_back.set(dv.RANGE_BACK)
         self.var_rng_up.set(dv.RANGE_UP)

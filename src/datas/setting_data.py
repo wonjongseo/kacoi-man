@@ -9,10 +9,17 @@ def _clamp_int(v: Any, lo: int, hi: int, default: int = 0) -> int:
         v = default
     return max(lo, min(hi, v))
 
+def _clamp_float(v: Any, lo: float, hi: float, default: float = 0.0) -> float:
+    try:
+        v = float(v)
+    except (TypeError, ValueError):
+        v = default
+    return max(lo, min(hi, v))
+
 
 def _png_or_empty(p: Optional[str]) -> str:
     p = (p or "").strip()
-    # 여기서 확장자 경고/검증을 하려면 .lower().endswith(".png") 체크 가능
+    # Keep raw path; extension warnings are handled by UI validation.
     return p
 
 
@@ -50,8 +57,8 @@ class AttackRange:
 
 @dataclass
 class BuffSettings:
-    cooldown_sec: int = 0   # 버프 쿨타임(초)
-    key: str = ""           # 버프 사용 키 (예: 'F1', 'Q', 'shift+a')
+    cooldown_sec: int = 0   # Buff cooldown in seconds.
+    key: str = ""           # Buff key (e.g. 'F1', 'Q', 'shift+a').
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "BuffSettings":
@@ -120,10 +127,12 @@ class SettingsConfig:
     mp_key: str = "end"       
     jump_key : str = "alt"       
     attack_key : str = "shift"       
+    teleport_key: str = "c"
+    teleport_cooldown_sec: float = 1.5
     attack_range: AttackRange = field(default_factory=AttackRange)
     templates: Templates = field(default_factory=Templates)
     buffs: List[BuffSettings] = field(default_factory=list)
-    # ---- 직렬화 / 역직렬화 ----
+    # ---- serialization / deserialization ----
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
 
@@ -138,7 +147,9 @@ class SettingsConfig:
             mp_key=(d.get("mp_key") or "").strip(),   
             jump_key=(d.get("jump_key") or "alt").strip(),   
             attack_key=(d.get("attack_key") or "shift").strip(),   
+            teleport_key=(d.get("teleport_key") or "c").strip(),
+            teleport_cooldown_sec=_clamp_float(d.get("teleport_cooldown_sec"), 0.1, 30.0, 1.5),
             attack_range=AttackRange.from_dict(d.get("attack_range") or {}),
             templates=Templates.from_dict(d.get("templates") or {}),
-            buffs=[BuffSettings.from_dict(x) for x in (d.get("buffs") or [])],  # ← 파싱
+            buffs=[BuffSettings.from_dict(x) for x in (d.get("buffs") or [])],
         )

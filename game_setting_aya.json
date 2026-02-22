@@ -1,5 +1,5 @@
 {
-  "monster_dir": "C:/Users/ayane/Desktop/jongseo/kacoi-man/assets/monsters/동쪽바위산6",
+  "monster_dir": "assets/monsters/동쪽바위산6",
   "hp_pct": 35,
   "mp_pct": 35,
   "hp_key": "del",
@@ -14,15 +14,15 @@
   },
   "templates": {
     "minimap": {
-      "top_left": "C:/Users/ayane/Desktop/jongseo/kacoi-man/assets/minimap_topLeft.png",
-      "bottom_right": "C:/Users/ayane/Desktop/jongseo/kacoi-man/assets/minimap_bottomRight.png",
-      "player": "C:/Users/ayane/Desktop/jongseo/kacoi-man/assets/me.png",
-      "other": "C:/Users/ayane/Desktop/jongseo/kacoi-man/assets/other.png"
+      "top_left": "assets/minimap_topLeft.png",
+      "bottom_right": "assets/minimap_bottomRight.png",
+      "player": "assets/me.png",
+      "other": "assets/other.png"
     },
     "character": {
-      "hp_bar": "C:/Users/ayane/Desktop/jongseo/kacoi-man/assets/hp_bar.png",
-      "mp_bar": "C:/Users/ayane/Desktop/jongseo/kacoi-man/assets/mp_bar.png",
-      "name": "C:/Users/ayane/Desktop/jongseo/kacoi-man/assets/charactor2.png"
+      "hp_bar": "assets/hp_bar.png",
+      "mp_bar": "assets/mp_bar.png",
+      "name": "assets/charactor2.png"
     },
     "misc": {
       "revive_message": ""

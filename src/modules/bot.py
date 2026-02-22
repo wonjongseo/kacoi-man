@@ -22,7 +22,7 @@ class RoutePatrol:
         config.gui.monitor.refresh_routine(current_index = self.index)
 
 
-_pyauto_lock = threading.RLock()  # 모든 pyautogui 조작을 이 락으로 보호 권장
+_pyauto_lock = threading.RLock()
 
 @contextmanager
 def _disable_failsafe_safely():
@@ -35,9 +35,9 @@ def _disable_failsafe_safely():
             pyautogui.FAILSAFE = old
 
 def _move_to_safe_center():
-    # 멀티 모니터/스케일링 고려해서 현재 주 모니터 사이즈로 계산
+
     w, h = pyautogui.size()
-    cx, cy = max(50, w // 2), max(50, h // 2)  # 모서리 안전 여유
+    cx, cy = max(50, w // 2), max(50, h // 2)
     pyautogui.moveTo(cx, cy, duration=0.05)
 
 
@@ -59,42 +59,42 @@ class Bot:
         self._last_x = None
         self._stuck_since = None
         self._jump_tries = 0
-        self._max_jump_tries = 1           # 점프 재시도 횟수 (원하면 1로 줄여도 됨)
+        self._max_jump_tries = 1
 
-        # 튜닝 파라미터
-        self._stuck_eps_px = 1.0           # 이 픽셀 이하로만 움직이면 "안 움직임"으로 간주
-        self._stuck_confirm_sec = 3     # 이 시간 이상 정체면 막힘 확정
-        self._jump_cooldown = 5         # 점프 시도 간 최소 간격(스팸 방지)
+
+        self._stuck_eps_px = 1.0
+        self._stuck_confirm_sec = 3
+        self._jump_cooldown = 5
         # self._last_jump_t = 0.0
 
-        self.is_climbing = False          # 등반 중(부착~해제)
-        self._last_attack_t = 0.0         # 최근 공격 시각(연타 속도 제한)
-        self._attack_interval = 0.18      # 공격 최소 간격(초)
+        self.is_climbing = False
+        self._last_attack_t = 0.0
+        self._attack_interval = 0.18
 
         self.stuck_attack_cnt = 0
         self.prev_char_pos    = None
         self.prev_action = ''
         self.can_attack = True
 
-                # 강제 이동(스턱-대시) 파라미터
+
         self._fm_last_x = None
         self._fm_stuck_since = None
         self._fm_tries = 0
-        self._fm_max_tries = 2        # 연속 시도 허용치
-        self._fm_cooldown = 0.6       # 강제 이동 후 쿨다운(초)
+        self._fm_max_tries = 2
+        self._fm_cooldown = 0.6
         
         self._fm_last_exec_t = 0.0
 
         
         self._last_drop_t = 0.0
-        self._drop_cooldown = 0.25  # 연속 드랍 방지
+        self._drop_cooldown = 0.25
 
-        self._attack_anim_sec = getattr(config.setting_data, 'attack_anim_sec', 0.35)  # 모션 길이(초)
-        self.attack_anim_until = 0.0  # 모션이 끝나는 시각
+        self._attack_anim_sec = getattr(config.setting_data, 'attack_anim_sec', 0.35)
+        self.attack_anim_until = 0.0
 
-        # Bot.__init__ 안
-        self._drop_verify_timeout = 0.50   # 아래점프 후 관찰 시간(초)
-        self._drop_verify_eps_px  = 3      # '내려갔다'로 인정할 최소 y 증가폭(px) - y가 아래로 갈수록 값 커진다고 가정
+
+        self._drop_verify_timeout = 0.50
+        self._drop_verify_eps_px  = 3
 
         self.input_lock = threading.RLock()
         config.input_lock = self.input_lock
@@ -112,7 +112,7 @@ class Bot:
         x축 이동이 거의 없으면 짧은 대시(또는 점프-대시)로 탈출.
         반환값: 실제로 강제 이동을 수행하면 True, 아니면 False
         """
-        # 전투/등반 중에는 간섭하지 않음 (원하면 조건 완화 가능)
+
         if  self.up_down or self.is_climbing:
             self._fm_reset()
             return False
@@ -124,7 +124,7 @@ class Bot:
         x, _ = pos
         now = time.time()
 
-        # 첫 샘플링
+
         if self._fm_last_x is None:
             self._fm_last_x = x
             self._fm_stuck_since = None
@@ -133,19 +133,19 @@ class Bot:
         dx = abs(x - self._fm_last_x)
         self._fm_last_x = x
 
-        # 쿨다운
+
         if (now - self._fm_last_exec_t) < self._fm_cooldown:
             return False
 
         if dx < self._stuck_eps_px:
-            # 정체 시작
+
             if self._fm_stuck_since is None:
                 self._fm_stuck_since = now
                 return False
 
-            # 충분히 오래 정체 → 강제 이동
+
             if (now - self._fm_stuck_since) >= self._stuck_confirm_sec:
-                # 공격/불필요 입력 해제
+
                 print("Kore?")
                 self._ensure_key('z',     'z_down',     False)
                 self._ensure_key(self.attack_key, 'shift_down', False)
@@ -160,19 +160,19 @@ class Bot:
                 self._ensure_key(escape_dir, f'{escape_dir}_down', False)
                 pyautogui.keyUp(self.jump_key)
               
-                # 상태 업데이트
+
                 self._fm_last_exec_t = now
                 self._fm_stuck_since = None
                 self._fm_tries += 1
                 if self._fm_tries >= self._fm_max_tries:
-                    # 반복 탈출 실패 시 완전 리셋(원하면 여기서 방향 전환 등 추가)
+
                     self._fm_tries = 0
 
                 return True
-            # 아직 정체 시간이 부족 → 대기
+
             return False
 
-        # 정상 이동 중이면 리셋
+
         self._fm_reset()
         return False
 
@@ -217,18 +217,18 @@ class Bot:
         self._last_x = x
         
         if dx < self._stuck_eps_px:
-            # 정체 시작/유지
+
             if self._stuck_since is None:
                 self._stuck_since = now
                 return False
 
-            # 정체가 충분히 이어졌고, 쿨다운도 지났으면 점프
+
             if (now - self._stuck_since) >= self._stuck_confirm_sec :
-                pyautogui.press(self.jump_key)     # ← 점프!
+                pyautogui.press(self.jump_key)
                 self._last_jump_t = now
                 self._jump_tries += 1
 
-                # 여러 번 연속 시도 후엔 상태 리셋(원하면 방향전환 로직 붙여도 됨)
+
                 if self._jump_tries >= self._max_jump_tries:
                     self._stuck_since = None
                     self._jump_tries = 0
@@ -258,7 +258,7 @@ class Bot:
     def stop(self):
         if config.macro_shutdown_evt:
             config.macro_shutdown_evt.set()
-        # 필요시 조인
+
         # if self.thread and self.thread.is_alive():
         #     self.thread.join(timeout=2)
 
@@ -308,7 +308,7 @@ class Bot:
                         if (now - self._last_drop_t) >= self._drop_cooldown:
                             self.drop_down()
                             self._last_drop_t = now
-                        # 아래층으로 내려간 뒤 위치가 안정화될 시간을 잠깐 준다
+
                         time.sleep(0.15)
                     
                     elif wp.y + 6 < cur_y:
@@ -318,7 +318,7 @@ class Bot:
                             self.sync_waypoint_to_y()
                             
                         else:
-                            if (not self.up_down) and (dx_abs > 12 or dy_abs > 6):   # 16은 맵에 맞춰 조정 가능(PREP_WIN*2 정도)
+                            if (not self.up_down) and (dx_abs > 12 or dy_abs > 6):
                                 print("????")
                                 self.sync_waypoint_to_y()
                                 
@@ -342,10 +342,10 @@ class Bot:
 
                 with _disable_failsafe_safely():
                     try:
-                        self.release_all_keys()   # keyUp 정리 (여기도 pyautogui 호출 → 락 안에서)
-                        _move_to_safe_center()    # 코너 대신 중앙으로 이동
+                        self.release_all_keys()
+                        _move_to_safe_center()
                     finally:
-                        pass  # FAILSAFE는 컨텍스트 매니저가 자동 복구
+                        pass
 
                 time.sleep(0.3)
                 
@@ -358,12 +358,12 @@ class Bot:
 
         if action == "ladder":
             
-            # 사다리용 접근 파라미터
-            PREP_WIN = 6      # 이 이하로 가까워지면 감속/탭 이동
-            SNAP_TOL = 0      # x 정렬 허용 오차
-            ATTACH_WIN = 2    # 이 이하로 가까우면 즉시 부착 시도
 
-            # 1) 멀면 일반 이동
+            PREP_WIN = 6
+            SNAP_TOL = 0
+            ATTACH_WIN = 2
+
+
             if dx < -PREP_WIN:
                 self._new_direction('left')
                 return
@@ -371,16 +371,16 @@ class Bot:
                 self._new_direction('right')
                 return
 
-            # 2) 접근 구간: 감속(탭 이동)으로 미세 정렬
-            #    키다운 이동은 멈추고, 탭으로만 조정
+
+
             if self.left_down:  self._ensure_key('left',  'left_down',  False)
             if self.right_down: self._ensure_key('right', 'right_down', False)
 
-            # 오차가 남았으면 탭으로 살짝 보정
+
             if abs(dx) > SNAP_TOL:
                 self._nudge_toward(target_x, step_ms=0.02)
 
-            # 3) 충분히 가까우면 바로 부착(Up+Jump) 실행
+
             if abs(dx) <= ATTACH_WIN:
                 self._ensure_key('up', 'up_down', True)
                 time.sleep(0.02)
@@ -394,14 +394,14 @@ class Bot:
             wp = config.routine.current_wp()
             in_place = getattr(wp, 'in_place', False)
             
-        STOP_TOL     = 0 if in_place else 2   # 이내면 완전히 정지
-        PREC_TAP_WIN = 8  # 이내면 keydown 대신 탭으로 미세조정
+        STOP_TOL     = 0 if in_place else 2
+        PREC_TAP_WIN = 8
 
-        GO_TOL       = 6 if action != "jump" else 2  # 이보다 멀면 방향키를 눌러 이동(큰 이동)
+        GO_TOL       = 6 if action != "jump" else 2
 
         dx_abs = abs(dx)
 
-        # 1) 목표 근처: 완전 정지
+
         if action == "ladder" or (action == 'jump' and in_place) :
             if dx_abs <= STOP_TOL:
                 if self.left_down:  self._ensure_key('left',  'left_down',  False)
@@ -414,7 +414,7 @@ class Bot:
                 self._nudge_toward(target_x, step_ms=0.018)
                 return
 
-        # 3) 멀리 있을 때: 방향키를 확실히 눌러 이동
+
         if dx < -GO_TOL:
             self._new_direction('left')
         elif dx > GO_TOL:
@@ -440,8 +440,8 @@ class Bot:
         best_i = min(
             range(len(config.routine.items)),
             key=lambda i: (
-                abs(config.routine.items[i].y - cy),   # ① y 차
-                abs(config.routine.items[i].x - cx)    # ② x 차
+                abs(config.routine.items[i].y - cy),
+                abs(config.routine.items[i].x - cx)
             )
         )
         
@@ -495,12 +495,12 @@ class Bot:
                     time.sleep(0.5)
                 return True
             else:
-                # 이동 점프(횟수만큼)
+
                 for _ in range(cnt):
                     pyautogui.press(self.jump_key)
                     self._ensure_key('left',  'left_down',  False)
                     self._ensure_key('right', 'right_down', False)
-                    time.sleep(0.5) # 점프 후 멈추는 시간 
+                    time.sleep(0.5)
 
                 return True
         
@@ -508,7 +508,7 @@ class Bot:
             if self.shift_down:
                 self._ensure_key(self.attack_key, 'shift_down', False)
 
-            # 0) x 미세 정렬(안전장치)
+
             success = False
             target_x = wp.x
             
@@ -527,9 +527,9 @@ class Bot:
                     self._nudge_toward(target_x, step_ms=0.1)
                     time.sleep(0.01)
 
-            # 1) 즉시 부착 시도 (Up+Jump)
+
             print("1) 즉시 부착 시도 (Up+Jump)")
-            pyautogui.press(self.jump_key)   # 붙기 점프
+            pyautogui.press(self.jump_key)
             self._ensure_key('up', 'up_down', True)
             time.sleep(0.02)
             self.is_climbing = True
@@ -549,7 +549,7 @@ class Bot:
                         success = True
                         break
 
-                    # y 변화 감시(정체 체크)
+
                     if prev_cy is None or abs(cy - prev_cy) > 1:
                         prev_cy = cy
                         stall_t = time.time()
@@ -579,31 +579,31 @@ class Bot:
         """↓+Jump(Alt)로 아래 플랫폼으로 내려가기 — 공격키/방향키와 충돌 방지
         내려가지 않았으면 sync_waypoint_to_y()를 호출한다.
         """
-        # 현재 y 기록 (검증용)
+
         start_y = None
         pos = config.player_pos_ab
         if pos:
             _, start_y = pos
 
-        # 공격키/점프키 동시 입력 방지
+
         pyautogui.keyUp(self.attack_key)
         self.shift_down = False
 
-        # 방향키는 굳이 누른 채일 필요 없음
+
         if self.left_down:
             pyautogui.keyUp('left');  self.left_down  = False
         if self.right_down:
             pyautogui.keyUp('right'); self.right_down = False
 
-        # ↓ + 점프(단발)
+
         pyautogui.keyDown('down')
-        pyautogui.press(self.jump_key)   # Alt 단발
+        pyautogui.press(self.jump_key)
         time.sleep(0.12)
         pyautogui.keyUp('down')
 
-        # --- 여기서 '정말 내려갔는지' 짧게 관찰 ---
+
         if start_y is None:
-            return  # 위치를 모르면 검증 스킵
+            return
 
         deadline = time.time() + self._drop_verify_timeout
         moved_down = False
@@ -612,14 +612,14 @@ class Bot:
             pos = config.player_pos_ab
             if pos:
                 _, cur_y = pos
-                # y가 아래로 갈수록 커진다고 가정: 충분히 증가했으면 성공
+
                 if cur_y > start_y + self._drop_verify_eps_px:
                     moved_down = True
                     break
-            time.sleep(0.02)  # 너무 빡세지 않게 폴링
+            time.sleep(0.02)
 
         if not moved_down:
-            # 일정 시간 관찰했는데 y가 안 내려갔다면 - 동기화 시도
+
             try:
                 self.sync_waypoint_to_y()
             except Exception as e:
@@ -676,5 +676,5 @@ class Bot:
             pyautogui.keyDown(self.attack_key)
             time.sleep(dur)
             pyautogui.keyUp(self.attack_key)
-            # shift_down 플래그는 False 유지
+
 

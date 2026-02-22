@@ -26,6 +26,7 @@ enabled = False
 path = []
 
 appear_other = False
+no_monster_c_enabled = False
 
 setting_data = None
 routine = None

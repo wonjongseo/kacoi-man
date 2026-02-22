@@ -11,11 +11,11 @@ from src.modules.gui import GUI
 from src.modules.listener import Listener
 from src.datas import setting_data as sd
 from src.common import config, utils
-from src.datas.routine_data import list_from_jsonable  # 너가 만든 액션 dataclass 유틸 (없으면 패스)
+from src.datas.routine_data import list_from_jsonable
 
 
 # -----------------------------
-# 경로 유틸
+
 # -----------------------------
 def get_app_dir() -> str:
     """PyInstaller(exe) / 일반 파이썬 실행 모두에서 실행 파일(.exe/.py)과 같은 폴더 경로를 반환."""
@@ -33,7 +33,7 @@ def read_setup_first_two_lines(filename: str = "setup.txt") -> Tuple[Optional[st
     app_dir = get_app_dir()
     path = os.path.join(app_dir, filename)
     if not os.path.exists(path):
-        # setup.txt 없으면 둘 다 None → 그냥 넘어감
+
         print(f"[INFO] {filename} 파일이 없어 로드를 건너뜁니다.")
         return None, None
 
@@ -78,8 +78,8 @@ def init_settings():
     app_dir = get_app_dir()
     line1, line2 = read_setup_first_two_lines()
 
-    game_setting_path = _resolve_path_if_any(app_dir, line1)  # 1행
-    default_routine_path = _resolve_path_if_any(app_dir, line2)  # 2행
+    game_setting_path = _resolve_path_if_any(app_dir, line1)
+    default_routine_path = _resolve_path_if_any(app_dir, line2)
 
     print(f"[INFO] game_setting 경로  : {game_setting_path if game_setting_path else '(미지정)'}")
     print(f"[INFO] default_routine 경로: {default_routine_path if default_routine_path else '(미지정)'}")
@@ -90,7 +90,7 @@ def init_settings():
 
 
 # -----------------------------
-# 앱 로직
+
 # -----------------------------
 game_setting, default_routine = init_settings()
 

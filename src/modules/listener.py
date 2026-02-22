@@ -6,15 +6,15 @@ from dataclasses import dataclass
 from typing import List
 from src.common import config, utils, handle_windows
 import math
-# ─────────────────────────────
-# Buff 스케줄용 데이터 구조
-# ─────────────────────────────
+
+
+
 @dataclass
 class _BuffTask:
     key: str
     cooldown: float          # seconds
-    next_at: float = 0.0     # 다음 실행 epoch
-    last_at: float = 0.0     # 마지막 실행 epoch
+    next_at: float = 0.0
+    last_at: float = 0.0
 
 
 class Listener:
@@ -22,20 +22,20 @@ class Listener:
         config.listener = self
 
         self.ready = False
-        self.enabled = True  # (키 리스너 활성화 의미; 봇 on/off는 config.enabled)
+        self.enabled = True
 
-        # ── 키 리스너 스레드 ──
+
         self.thread = threading.Thread(target=self._main, daemon=True)
 
-        # ── 버프 스케줄러 ──
-        self._last_cast_ts = 0.0  # ← 마지막 버프 발사 시각 기록 (전역 간격용)
+
+        self._last_cast_ts = 0.0
         self._alive = threading.Event()
         self._cv = threading.Condition()
 
         self._buff_tasks: List[_BuffTask] = []
         self._buff_thread = threading.Thread(target=self._buff_loop, daemon=True)
     
-    # 외부에서 Settings 적용 후 호출하면 최신 버프들 반영됨
+
     def reload_buffs_from_config(self):
         s = getattr(config, "setting_data", None)
         buffs = getattr(s, "buffs", []) if s else []
@@ -46,7 +46,7 @@ class Listener:
             cd = float(getattr(b, "cooldown_sec", 0) or 0)
             if not key or cd <= 0:
                 continue
-            # 처음엔 약간 지연(0.5s) 후 시전; enable 시점에 다시 prime 됨.
+
             tasks.append(_BuffTask(key=key, cooldown=cd, next_at=float('inf')))
 
         with self._cv:
@@ -56,13 +56,13 @@ class Listener:
 
     def start(self):
         if self.ready:
-            return  # 이미 시작됨
+            return
     
         print('\n[~] Started keyboard listener')
         self._alive.set()
-        # 최신 설정 반영
+
         self.reload_buffs_from_config()
-        # 스레드 시작
+
         self.thread.start()
         self._buff_thread.start()
         self.ready = True
@@ -88,21 +88,28 @@ class Listener:
                 if self.enabled:
                     if kb.is_pressed('f9'):
                         Listener.toggle_enabled()
-                        # 키 뗄 때까지 살짝 대기 (디바운스)
+
                         while kb.is_pressed('f9'):
                             time.sleep(0.05)
 
                     elif kb.is_pressed('f8'):
                         x, y = config.player_pos_ab
-                        # 좌표를 폼에 채우기
+
                         try:
                             form = config.gui.edit.form_panel
                             form.var_x.set(x)
                             form.var_y.set(y)
                         except Exception:
                             pass
-                        # 디바운스
+
                         while kb.is_pressed('f8'):
+                            time.sleep(0.05)
+                    elif kb.is_pressed('f6'):
+                        config.no_monster_c_enabled = not getattr(config, "no_monster_c_enabled", False)
+                        state = "ON" if config.no_monster_c_enabled else "OFF"
+                        print(f"[Listener] no-monster teleport: {state}")
+                        winsound.Beep(880 if config.no_monster_c_enabled else 440, 120)
+                        while kb.is_pressed('f6'):
                             time.sleep(0.05)
 
             except Exception as e:
@@ -127,7 +134,7 @@ class Listener:
         if config.enabled:
             handle_windows.activate_window(config.TITLE)
             config.gui.monitor.refresh_routine()
-            # ── 봇 on 되는 시점에 버프 스케줄을 '지금부터' 시작하도록 next_at 초기화
+
             try:
                 if getattr(config, "listener", None):
                     config.listener._prime_buffs_on_enable()
@@ -140,9 +147,9 @@ class Listener:
                 config.bot.release_all_keys()
         time.sleep(0.267)
 
-    # ─────────────────────────────
+
     # Buff scheduler internals
-    # ─────────────────────────────
+
     def _prime_buffs_on_enable(self):
         now = time.time()
         with self._cv:
@@ -151,7 +158,7 @@ class Listener:
                 t.next_at = now + 0.2 + stagger
                 t.last_at = 0.0
                 stagger += 0.1
-            # 전역 발사간격도 지금으로 리셋(연속 발사 방지)
+
             self._last_cast_ts = now
             self._cv.notify_all()
 
@@ -170,17 +177,17 @@ class Listener:
                 finite_tasks = [t for t in self._buff_tasks if math.isfinite(t.next_at)]
                 if finite_tasks:
                     due = min(t.next_at for t in finite_tasks)
-                    # 너무 큰 값 방지용 캡(최대 5초만 대기)
+
                     timeout = max(0.0, min(5.0, due - now))
                 else:
-                    # 아직 prime되지 않은 상태(모두 inf) → 짧게만 대기
+
                     timeout = 0.5
                 self._cv.wait(timeout=timeout)
 
             if not self._alive.is_set():
                 break
 
-            # 3) 봇이 꺼져있다면 대기
+
             if not config.enabled:
                 time.sleep(0.2)
                 continue
@@ -203,17 +210,17 @@ class Listener:
                     now2 = time.time()
                     t.last_at = now2
                     t.next_at = now2 + t.cooldown
-                    self._last_cast_ts = now2  # 전역 간격 갱신
+                    self._last_cast_ts = now2
                     fired = True
-                    break  # 한 번에 하나만
+                    break
             if not fired:
-                # 혹시라도 모든 next_at이 미래이면 살짝 쉼
+
                 time.sleep(0.05)
 
     def _fire_buff(self, task: _BuffTask):
         """실제 키 입력. keyboard 실패 시 pyautogui로 백업."""
         try:
-            kb.send(task.key)  # "f1", "q", "shift+a" 등
+            kb.send(task.key)
         except Exception:
             try:
                 import pyautogui

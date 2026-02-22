@@ -22,11 +22,11 @@ class PotionManager:
         self.hp_key = getattr(config.setting_data, 'hp_key', df.HP_KEY)
         self.mp_key = getattr(config.setting_data, 'mp_key', df.MP_KEY)
 
-        # ----- 물약 없음 감지(쿨다운 없음) -----
-        self.post_check_delay = 0.18   # 키 입력 후 재측정 대기
-        self.min_increase_hp = 0.02    # 성공으로 볼 최소 증가폭(=2%)
+
+        self.post_check_delay = 0.18
+        self.min_increase_hp = 0.02
         self.min_increase_mp = 0.02
-        self.fail_limit = 3            # 연속 실패 N회면 "없음" 상태로 기록
+        self.fail_limit = 3
         self.hp_fail = 0
         self.mp_fail = 0
         self.hp_out = False
@@ -34,7 +34,7 @@ class PotionManager:
         self._hp_out_reported = False
         self._mp_out_reported = False
 
-    # ──────────────────────────────────────────────
+
     def _color_ratio_hsv(self, roi_bgr, color: str, sat_min=80, val_min=60):
         h, w, _ = roi_bgr.shape
         if h == 0 or w == 0:
@@ -53,7 +53,7 @@ class PotionManager:
             mask = np.zeros_like(H, dtype=bool)
         return mask.mean()
 
-    # ──────────────────────────────────────────────
+
     def _locate_bar_single(self, tpl, label, expected_color=None, search_rect=None, max_tries=5):
         if search_rect is None:
             left, top = 0, 0
@@ -84,7 +84,7 @@ class PotionManager:
             ok = True
             if expected_color in ('red', 'blue'):
                 ratio = self._color_ratio_hsv(roi, expected_color)
-                if ratio < 0.18:  # EXP 등 오검 방지
+                if ratio < 0.18:
                     ok = False
 
             if ok:
@@ -95,7 +95,7 @@ class PotionManager:
 
         return None
 
-    # ──────────────────────────────────────────────
+
     def _ensure_rois(self):
         if self.mp_roi is None:
             self.mp_roi = self._locate_bar_single(self.mp_tpl, 'mp', expected_color='blue')
@@ -107,7 +107,7 @@ class PotionManager:
                 search_rect = None
             self.hp_roi = self._locate_bar_single(self.hp_tpl, 'hp', expected_color='red', search_rect=search_rect)
 
-    # ──────────────────────────────────────────────
+
     def _grab_rois(self):
         with mss.mss() as sct:
             out = {}
@@ -121,11 +121,11 @@ class PotionManager:
                 ))[:, :, :3]
         return out
 
-    # ──────────────────────────────────────────────
+
     def _fill_ratio_color(self, roi_bgr, color: str):
         return self._color_ratio_hsv(roi_bgr, color)
 
-    # ──────────────────────────────────────────────
+
     def _try_consume(self, bar: str, key: str, before_pct: float) -> bool:
         pyautogui.press(key)
         time.sleep(self.post_check_delay)
@@ -137,7 +137,7 @@ class PotionManager:
             after_pct = self._fill_ratio_color(rois_after["mp"], 'blue') if rois_after["mp"] is not None else before_pct
             return (after_pct - before_pct) >= self.min_increase_mp
 
-    # ──────────────────────────────────────────────
+
     def check(self):
         self._ensure_rois()
         if not (self.hp_roi and self.mp_roi):
@@ -190,7 +190,7 @@ class PotionManager:
                         print("[POTION] MP 포션 없음으로 판단(쿨다운 없이 계속 재시도)")
                         self._mp_out_reported = True
 
-    # ──────────────────────────────────────────────
+
     def loop(self):
         while True:
             if config.enabled is False:
