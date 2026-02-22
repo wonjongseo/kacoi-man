@@ -70,7 +70,7 @@ class Bot:
         self._stuck_eps_px = 1.0
         self._stuck_confirm_sec = 3
         self._jump_cooldown = 5
-        # self._last_jump_t = 0.0
+       
 
         self.is_climbing = False
         self._last_attack_t = 0.0
@@ -567,6 +567,7 @@ class Bot:
             return False
 
         threshold = float(df.CHANNEL_SWITCH_MATCH_THRESHOLD)
+        start_t = time.time()
         deadline = time.time() + timeout_sec
         seen_disappear = False
 
@@ -591,20 +592,55 @@ class Bot:
                 continue
 
             res = cv2.matchTemplate(gray, name_template, cv2.TM_CCOEFF_NORMED)
-            visible = bool(np.max(res) >= threshold)
+            max_val = float(np.max(res))
+            visible = bool(max_val >= threshold)
 
             if not visible:
+                if not seen_disappear:
+                    print(f"[Bot] name hidden (loading?) at +{time.time() - start_t:.2f}s")
                 seen_disappear = True
             elif seen_disappear and visible:
+                print(
+                    f"[Bot] name detected at +{time.time() - start_t:.2f}s "
+                    f"(score={max_val:.3f}, threshold={threshold:.3f})"
+                )
                 return True
             time.sleep(0.1)
 
+        print(f"[Bot] name detect timeout after {timeout_sec:.1f}s")
         return False
 
+    def _apply_enable_like_runtime_reset(self):
+        """
+        Apply the same runtime refresh path used when pressing F9 to enable:
+        focus window, rebind to (0,0), reload runtime settings, and prime buffs.
+        """
+        handle_windows.activate_window(config.TITLE)
+
+        if getattr(config, "gui", None) and hasattr(config.gui, "monitor"):
+            config.gui.monitor.refresh_routine()
+
+        if hasattr(self, "reload_runtime_settings"):
+            self.reload_runtime_settings()
+
+        cap = getattr(config, "capture", None)
+        if cap is not None and hasattr(cap, "rebind_window"):
+            cap.rebind_window(force_move=True)
+
+        listener = getattr(config, "listener", None)
+        if listener is not None:
+            if hasattr(listener, "reload_buffs_from_config"):
+                listener.reload_buffs_from_config()
+            if hasattr(listener, "_prime_buffs_on_enable"):
+                listener._prime_buffs_on_enable()
+
     def _run_channel_switch_sequence(self, skip_safe_move=False):
+        right_hold_started = False
+        potion_paused_for_switch = False
         try:
             # During channel-change loading, black screen is expected.
             config.black_screen_suppress_until = time.time() + float(df.CHANNEL_SWITCH_LOAD_TIMEOUT_SEC) + 5.0
+            config.potion_suppress_until = time.time() + float(df.CHANNEL_SWITCH_LOAD_TIMEOUT_SEC) + 5.0
             old_attack_in_capture = getattr(config, "attack_in_capture", True)
             config.attack_in_capture = False
             self._ignore_monster_for_channel_switch = True
@@ -637,14 +673,27 @@ class Bot:
                 print("[Bot] channel switch failed: change not found")
                 return False
 
+            # Pause potion checks during channel-change loading.
+            config.potion_runtime_enabled = False
+            potion_paused_for_switch = True
+
+            # Keep moving right after pressing change until loading completes.
+            self._ensure_key('right', 'right_down', True)
+            right_hold_started = True
+
             # Success means character name disappeared (loading) then came back.
             if not self._wait_character_name_reloaded(timeout_sec=float(df.CHANNEL_SWITCH_LOAD_TIMEOUT_SEC)):
                 print("[Bot] channel switch failed: character name was not reloaded")
                 return False
 
-            cap = getattr(config, "capture", None)
-            if cap is not None and hasattr(cap, "rebind_window"):
-                cap.rebind_window(force_move=True)
+            self._ensure_key('right', 'right_down', False)
+            right_hold_started = False
+            config.potion_runtime_enabled = True
+            potion_paused_for_switch = False
+
+            # After character name is visible again, run the same init path as F9 ON.
+            self._apply_enable_like_runtime_reset()
+            config.appear_other = False
 
             print(f"[Bot] channel switch done -> {channel_name}")
             return True
@@ -652,6 +701,10 @@ class Bot:
             print(f"[Bot] channel switch exception: {e}")
             return False
         finally:
+            if right_hold_started:
+                self._ensure_key('right', 'right_down', False)
+            if potion_paused_for_switch:
+                config.potion_runtime_enabled = True
             self._ignore_monster_for_channel_switch = False
             config.attack_in_capture = old_attack_in_capture
 

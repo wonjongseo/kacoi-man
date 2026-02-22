@@ -185,7 +185,23 @@ class Notifier:
             return
 
         time.sleep(1.0)
-        self._click_vildge_paper_in_window()
+        clicked = self._click_vildge_paper_in_window()
+        if clicked:
+            self._force_macro_off_like_f9()
+
+    def _force_macro_off_like_f9(self):
+        """Pause the macro using the same OFF path as pressing F9."""
+        try:
+            if bool(getattr(config, "enabled", False)):
+                from src.modules.listener import Listener
+                Listener.toggle_enabled()
+            else:
+                bot = getattr(config, "bot", None)
+                if bot is not None:
+                    bot.release_all_keys()
+            print("[Notifier] macro paused after vildge_paper double-click")
+        except Exception as e:
+            print(f"[Notifier] failed to pause macro: {e}")
 
     def _click_vildge_paper_in_window(self, threshold=0.72):
         template = self._vildge_paper_template

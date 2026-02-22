@@ -139,6 +139,18 @@ class PotionManager:
 
 
     def check(self):
+        if not bool(getattr(config, "potion_runtime_enabled", True)):
+            return
+
+        # Skip potion checks while channel-switch loading is expected.
+        suppress_until = float(getattr(config, "potion_suppress_until", 0.0) or 0.0)
+        if time.time() < suppress_until:
+            return
+
+        bot = getattr(config, "bot", None)
+        if bot is not None and getattr(bot, "_channel_switch_pending", False):
+            return
+
         self._ensure_rois()
         if not (self.hp_roi and self.mp_roi):
             return
