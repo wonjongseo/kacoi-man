@@ -162,6 +162,25 @@ class Capture:
         print('\n[~] Started video capture')
         self.thread.start()
     
+    def rebind_window(self, force_move=True):
+        windows = gw.getWindowsWithTitle(config.TITLE)
+        if not windows:
+            print(f"[ERROR] Cannot find window: '{config.TITLE}'")
+            return False
+
+        win = windows[0]
+        if force_move:
+            try:
+                win.moveTo(0, 0)
+                win.resizeTo(config.SCREEN_WIDTH, config.SCREEN_HEIGHT)
+            except Exception:
+                pass
+        handle_windows.activate_window(win.title)
+        config.TITLE = win.title
+        self.window_resized = True
+        print(f"[INFO] '{win.title}' window resized and activated")
+        return True
+
 
     def _main(self):
         """Constantly monitors the player's position and in-game events."""
@@ -178,23 +197,8 @@ class Capture:
         
 
         while self.window_resized is False:
-            windows = gw.getWindowsWithTitle(config.TITLE)
-            print(f'windows : {windows}')
-            
-            if windows:
-                win = windows[0]
-                try:
-                    win.moveTo(0, 0)
-                    win.resizeTo(config.SCREEN_WIDTH, config.SCREEN_HEIGHT)
-                except Exception:
-                    pass
-                handle_windows.activate_window(win.title)
-                config.TITLE = win.title
-                print(f"[INFO] '{win.title}' window resized and activated")
-                self.window_resized = True
-                time.sleep(0.5)
-            else:
-                print(f"[ERROR] Cannot find window: '{config.TITLE}'")
+            self.rebind_window(force_move=True)
+            time.sleep(0.5)
         while not (config.macro_shutdown_evt and config.macro_shutdown_evt.is_set()):
             self.roop_screen()
             time.sleep(0.001)

@@ -1,0 +1,58 @@
+﻿한시간에 한번씩 채널을 이동하게 하고싶어  
+self.window에서 menu.png를 찾고 한번 클릭 그 후 1초 뒤
+channel1.png를 클릭 후 change.png 를 클릭 
+
+그러면 로딩중으로 바뀌게 될거야 CharacterTemplates.name이 화면에 보일때까지 기다렸다가. 
+보이면 키보드 m을 누르고 초기 설정( 메이플 창을 0.0 좌표로 이동하는 세팅을 시작~~)
+
+그리고 또 한시간이 지나면 channel1.png 이 아니라 
+channel2.png 로 이동하게 하고 이후 처리 동일
+
+그 후 또 한시간이 지나면 channel1.png 로 이동하게 해줘.
+
+시간은 다른 상수 파일로 빼줘
+
+아 미안. menu.png를 클릭하고 다음 클릭해야하는건 channel1.png가  아니라.
+channel.png야.  channel.png를 클릭 후 1초 뒤 channel1.png (또는 channel2.png) 를 클릭해야해
+
+
+한시간에 한번씩 채널을 이동하게 하고싶은데
+self.window에서 menu.png를 찾고 한번 클릭 그 후 1초 뒤
+channel.png 를 클릭. 그리고 1초 뒤 channel1.png를 클릭 
+
+그리고 채널을 바꾸기 위해서 안전한 곳으로 가려면 대부분 사다리를 타고 이동해야해
+
+지금 프로젝트의 코드 중 ladder 액션을 보면 
+x,y,end_y가 있을텐데. 이거랑 동일한 방식으로 안전한 위치로 이동 시킨 후  채널 변경을 해야해.
+일단 테스트용으로
+x: 35,y: 119,end_y:84 로 해서 테스트해보자. 
+
+테스트니까 1시간이 아니라 1분으로 하고
+
+// 근데 채널 이동한 후가 문제야.
+내 코드를 보면 화면이 검정색으로 바뀌면 siren.mp3가 울리도록 되어있어 
+일단 채널 변경 후 화면이 검정색으로 바뀌어도 siren은 안울리게 해줘
+
+
+assets/channel 폴더에 이미지들을 넣어놨어.
+channel1.png > channel2.png > channel1.png... 로 말했는데
+assets/channel의 폴더의 내용을 랜덤으로 선택해서 하고싶어.
+주의점으로는 랜덤으로 선택된게 channel1.png 라고 했을때 다음은 절때 channel1.png로 하면 안돼.
+
+그리고 채널 이동 후 가끔 other.png가 있을때가 있어.
+other.png가 있을경우엔 바로 다른 채널로 이동하게 해줘
+
+아니면 또다른 방식으로 
+assets/channel의 폴더의 고정된 이미지를 찾는게 아니라.
+channel_frame_lefttop.png 부터 channel_frame_rightbottom.png 사이에
+channel_is_fine.png를 찾아서 클릭 후 change.png 를 클릭하게 
+
+channel_frame_lefttop.png 부터 channel_frame_rightbottom.png 사이에
+ channel_is_fine.png 의 이미지가 여러개 있으니까.
+ 랜덤으로 클릭하게 하는거지.
+
+근데 랜덤으로 걸린 channel_is_fine.png가 현재 채널인 경우 channel_is_fine.png를 클릭해도 클릭되지 않고
+change.png를 클릭해도 클릭되지 않아 .
+
+그러니까 1분이 지나도 채널 변경이 되지 않는다면 channel_frame_lefttop.png 부터 channel_frame_rightbottom.png 사이에
+랜덤의 channel_is_fine.png를 고르는 작업을 다시 해야해

@@ -1,9 +1,14 @@
 import math
 import threading
 import time
+import random
 import pyautogui
-from src.common import config, utils, default_value as df
+import cv2
+import mss
+import numpy as np
+from src.common import config, utils, default_value as df, handle_windows
 from contextlib import contextmanager
+from types import SimpleNamespace
 class RoutePatrol:
     def __init__(self, items):
         self.items = items
@@ -98,9 +103,30 @@ class Bot:
 
         self.input_lock = threading.RLock()
         config.input_lock = self.input_lock
+
+        self._next_channel_switch_at = time.time() + float(df.CHANNEL_SWITCH_INTERVAL_SEC)
+        self._channel_switch_pending = False
+        self._menu_template = cv2.imread(utils.resource_path('assets/menu.png'), cv2.IMREAD_GRAYSCALE)
+        self._channel_menu_template = cv2.imread(utils.resource_path('assets/channel.png'), cv2.IMREAD_GRAYSCALE)
+        self._channel_frame_tl_template = cv2.imread(utils.resource_path('assets/channel_frame_lefttop.png'), cv2.IMREAD_GRAYSCALE)
+        self._channel_frame_br_template = cv2.imread(utils.resource_path('assets/channel_frame_rightbottom.png'), cv2.IMREAD_GRAYSCALE)
+        self._channel_is_fine_template = cv2.imread(utils.resource_path('assets/channel_is_fine.png'), cv2.IMREAD_COLOR)
+        self._last_fine_channel_point = None
+        self._change_template = cv2.imread(utils.resource_path('assets/change.png'), cv2.IMREAD_GRAYSCALE)
+        self._ignore_monster_for_channel_switch = False
+        self._last_other_forced_switch_t = 0.0
     
+    def reload_runtime_settings(self):
+        """Reload runtime keys/options from latest settings without recreating the bot."""
+        s = getattr(config, "setting_data", None)
+        if s is None:
+            return
+        self.attack_key = getattr(s, 'attack_key', self.attack_key) or self.attack_key
+        self.jump_key = getattr(s, 'jump_key', self.jump_key) or self.jump_key
+        self._attack_anim_sec = float(getattr(s, 'attack_anim_sec', self._attack_anim_sec) or self._attack_anim_sec)
+
    
-            
+             
     def _fm_reset(self):
         """강제 이동 스턱 상태 리셋"""
         self._fm_stuck_since = None
@@ -271,8 +297,31 @@ class Bot:
                 if config.enabled is False:
                     time.sleep(0.001)
                     continue
-                
+
+                now = time.time()
+                if now >= self._next_channel_switch_at:
+                    self._channel_switch_pending = True
+
+                # Hard priority: once due, do not run normal routine until channel switch succeeds.
+                if self._channel_switch_pending:
+                    switched = self._run_channel_switch_sequence()
+                    if switched:
+                        self._channel_switch_pending = False
+                        self._next_channel_switch_at = time.time() + float(df.CHANNEL_SWITCH_INTERVAL_SEC)
+                    else:
+                        # keep pending; retry soon and block all other actions
+                        time.sleep(max(0.5, float(df.CHANNEL_SWITCH_WAIT_CHECK_SEC)))
+                    time.sleep(0.2)
+                    continue
+                 
                 if config.appear_other:
+                    # If another player is detected right after channel move, jump to a different channel immediately.
+                    if (now - self._last_other_forced_switch_t) >= 5.0:
+                        self._last_other_forced_switch_t = now
+                        switched = self._run_channel_switch_sequence(skip_safe_move=True)
+                        self._next_channel_switch_at = time.time() + (
+                            float(df.CHANNEL_SWITCH_INTERVAL_SEC) if switched else float(df.CHANNEL_SWITCH_RETRY_SEC)
+                        )
                     self.release_all_keys()
                     time.sleep(0.001)
                     continue
@@ -342,10 +391,322 @@ class Bot:
                         pass
 
                 time.sleep(0.3)
-                
+                 
+    def _grab_capture_window(self):
+        cap = getattr(config, "capture", None)
+        if cap is None or not getattr(cap, "window", None):
+            return None, None
+        win = cap.window
+        monitor = {
+            "left": int(win.get("left", 0)),
+            "top": int(win.get("top", 0)),
+            "width": int(win.get("width", 0)),
+            "height": int(win.get("height", 0)),
+        }
+        if monitor["width"] <= 0 or monitor["height"] <= 0:
+            return None, None
+        with mss.mss() as sct:
+            frame = np.array(sct.grab(monitor))[:, :, :3]
+        return frame, monitor
+
+    def _click_template_in_window(self, template, timeout_sec=5.0):
+        if template is None:
+            return False
+        threshold = float(df.CHANNEL_SWITCH_MATCH_THRESHOLD)
+        deadline = time.time() + timeout_sec
+        while time.time() < deadline and config.enabled:
+            frame, monitor = self._grab_capture_window()
+            if frame is None:
+                time.sleep(0.1)
+                continue
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            th, tw = template.shape[:2]
+            fh, fw = gray.shape[:2]
+            if th > fh or tw > fw:
+                time.sleep(0.1)
+                continue
+            res = cv2.matchTemplate(gray, template, cv2.TM_CCOEFF_NORMED)
+            _, max_val, _, max_loc = cv2.minMaxLoc(res)
+            if max_val >= threshold:
+                x = monitor["left"] + max_loc[0] + (tw // 2)
+                y = monitor["top"] + max_loc[1] + (th // 2)
+                pyautogui.click(x, y)
+                return True
+            time.sleep(0.1)
+        return False
+
+    def _wait_character_name_visible(self, timeout_sec):
+        name_path = getattr(config.setting_data.templates.character, "name", "")
+        if not name_path:
+            return False
+        name_template = cv2.imread(name_path, cv2.IMREAD_GRAYSCALE)
+        if name_template is None:
+            return False
+
+        threshold = float(df.CHANNEL_SWITCH_MATCH_THRESHOLD)
+        deadline = time.time() + timeout_sec
+        while time.time() < deadline and config.enabled:
+            frame = getattr(config.capture, "frame", None)
+            if frame is None:
+                time.sleep(0.1)
+                continue
+            try:
+                if len(frame.shape) == 3 and frame.shape[2] == 4:
+                    gray = cv2.cvtColor(frame, cv2.COLOR_BGRA2GRAY)
+                else:
+                    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            except Exception:
+                time.sleep(0.1)
+                continue
+            th, tw = name_template.shape[:2]
+            fh, fw = gray.shape[:2]
+            if th > fh or tw > fw:
+                time.sleep(0.1)
+                continue
+            res = cv2.matchTemplate(gray, name_template, cv2.TM_CCOEFF_NORMED)
+            if np.max(res) >= threshold:
+                return True
+            time.sleep(0.1)
+        return False
+
+    def _find_best_match(self, gray, template, threshold):
+        if template is None:
+            return None
+        th, tw = template.shape[:2]
+        gh, gw = gray.shape[:2]
+        if th > gh or tw > gw:
+            return None
+        res = cv2.matchTemplate(gray, template, cv2.TM_CCOEFF_NORMED)
+        _, max_val, _, max_loc = cv2.minMaxLoc(res)
+        if max_val < threshold:
+            return None
+        return max_loc, max_val, (tw, th)
+
+    def _pick_random_fine_channel_in_frame(self, timeout_sec=5.0):
+        threshold = float(df.CHANNEL_SWITCH_MATCH_THRESHOLD)
+        deadline = time.time() + timeout_sec
+
+        while time.time() < deadline and config.enabled:
+            frame, monitor = self._grab_capture_window()
+            if frame is None:
+                time.sleep(0.1)
+                continue
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+            tl_m = self._find_best_match(gray, self._channel_frame_tl_template, threshold)
+            br_m = self._find_best_match(gray, self._channel_frame_br_template, threshold)
+            if tl_m is None or br_m is None:
+                time.sleep(0.1)
+                continue
+
+            (tl_xy, _, tl_wh) = tl_m
+            (br_xy, _, br_wh) = br_m
+            x1 = int(tl_xy[0] + tl_wh[0])
+            y1 = int(tl_xy[1] + tl_wh[1])
+            x2 = int(br_xy[0])
+            y2 = int(br_xy[1])
+
+            if x2 <= x1 or y2 <= y1:
+                time.sleep(0.1)
+                continue
+
+            roi = frame[y1:y2, x1:x2]
+            fine = self._channel_is_fine_template
+            if fine is None:
+                return False, None
+            fh, fw = fine.shape[:2]
+            rh, rw = roi.shape[:2]
+            if fh > rh or fw > rw:
+                time.sleep(0.1)
+                continue
+
+            res = cv2.matchTemplate(roi, fine, cv2.TM_CCOEFF_NORMED)
+            ys, xs = np.where(res >= threshold)
+            if len(xs) == 0:
+                time.sleep(0.1)
+                continue
+
+            # Build candidate centers and reduce near-duplicates.
+            raw = []
+            for (rx, ry) in zip(xs, ys):
+                score = float(res[ry, rx])
+                cx = int(rx + fw // 2)
+                cy = int(ry + fh // 2)
+                raw.append((score, cx, cy))
+            raw.sort(reverse=True, key=lambda t: t[0])
+
+            dedup = []
+            min_dist = max(8, min(fw, fh) // 2)
+            for score, cx, cy in raw:
+                if all(((cx - ox) ** 2 + (cy - oy) ** 2) >= (min_dist * min_dist) for _, ox, oy in dedup):
+                    dedup.append((score, cx, cy))
+
+            candidates = dedup[:]
+            if self._last_fine_channel_point is not None and len(candidates) > 1:
+                lx, ly = self._last_fine_channel_point
+                filtered = [(s, cx, cy) for (s, cx, cy) in candidates if abs(cx - lx) + abs(cy - ly) > 2]
+                if filtered:
+                    candidates = filtered
+
+            _, pick_x, pick_y = random.choice(candidates)
+            self._last_fine_channel_point = (pick_x, pick_y)
+
+            abs_x = monitor["left"] + x1 + pick_x
+            abs_y = monitor["top"] + y1 + pick_y
+            pyautogui.click(abs_x, abs_y)
+            return True, "channel_is_fine"
+
+        return False, None
+
+    def _wait_character_name_reloaded(self, timeout_sec):
+        name_path = getattr(config.setting_data.templates.character, "name", "")
+        if not name_path:
+            return False
+        name_template = cv2.imread(name_path, cv2.IMREAD_GRAYSCALE)
+        if name_template is None:
+            return False
+
+        threshold = float(df.CHANNEL_SWITCH_MATCH_THRESHOLD)
+        deadline = time.time() + timeout_sec
+        seen_disappear = False
+
+        while time.time() < deadline and config.enabled:
+            frame = getattr(config.capture, "frame", None)
+            if frame is None:
+                time.sleep(0.1)
+                continue
+            try:
+                if len(frame.shape) == 3 and frame.shape[2] == 4:
+                    gray = cv2.cvtColor(frame, cv2.COLOR_BGRA2GRAY)
+                else:
+                    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            except Exception:
+                time.sleep(0.1)
+                continue
+
+            th, tw = name_template.shape[:2]
+            fh, fw = gray.shape[:2]
+            if th > fh or tw > fw:
+                time.sleep(0.1)
+                continue
+
+            res = cv2.matchTemplate(gray, name_template, cv2.TM_CCOEFF_NORMED)
+            visible = bool(np.max(res) >= threshold)
+
+            if not visible:
+                seen_disappear = True
+            elif seen_disappear and visible:
+                return True
+            time.sleep(0.1)
+
+        return False
+
+    def _run_channel_switch_sequence(self, skip_safe_move=False):
+        try:
+            # During channel-change loading, black screen is expected.
+            config.black_screen_suppress_until = time.time() + float(df.CHANNEL_SWITCH_LOAD_TIMEOUT_SEC) + 5.0
+            old_attack_in_capture = getattr(config, "attack_in_capture", True)
+            config.attack_in_capture = False
+            self._ignore_monster_for_channel_switch = True
+
+            if (not skip_safe_move) and (not self._move_to_safe_ladder_before_switch()):
+                print("[Bot] channel switch failed: could not reach safe ladder waypoint")
+                return False
+
+            self.release_all_keys()
+            handle_windows.activate_window(config.TITLE)
+            time.sleep(0.05)
+
+            if not self._click_template_in_window(self._menu_template, timeout_sec=5.0):
+                print("[Bot] channel switch failed: menu not found")
+                return False
+            time.sleep(1.0)
+
+            if not self._click_template_in_window(self._channel_menu_template, timeout_sec=5.0):
+                print("[Bot] channel switch failed: channel menu not found")
+                return False
+            time.sleep(1.0)
+
+            # Pick one random "available channel" icon in the channel frame region.
+            picked, channel_name = self._pick_random_fine_channel_in_frame(timeout_sec=5.0)
+            if not picked:
+                print("[Bot] channel switch failed: no channel_is_fine found in channel frame")
+                return False
+
+            if not self._click_template_in_window(self._change_template, timeout_sec=5.0):
+                print("[Bot] channel switch failed: change not found")
+                return False
+
+            # Success means character name disappeared (loading) then came back.
+            if not self._wait_character_name_reloaded(timeout_sec=float(df.CHANNEL_SWITCH_LOAD_TIMEOUT_SEC)):
+                print("[Bot] channel switch failed: character name was not reloaded")
+                return False
+
+            cap = getattr(config, "capture", None)
+            if cap is not None and hasattr(cap, "rebind_window"):
+                cap.rebind_window(force_move=True)
+
+            print(f"[Bot] channel switch done -> {channel_name}")
+            return True
+        except Exception as e:
+            print(f"[Bot] channel switch exception: {e}")
+            return False
+        finally:
+            self._ignore_monster_for_channel_switch = False
+            config.attack_in_capture = old_attack_in_capture
+
+    def _is_channel_switch_position_ready(self):
+        tx = int(getattr(df, "CHANNEL_SWITCH_POS_X", -1))
+        ty = int(getattr(df, "CHANNEL_SWITCH_POS_Y", -1))
+        tol_x = int(getattr(df, "CHANNEL_SWITCH_POS_TOL_X", 8))
+        tol_y = int(getattr(df, "CHANNEL_SWITCH_POS_TOL_Y", 8))
+
+        # If both are negative, do not enforce position gating.
+        if tx < 0 and ty < 0:
+            return True
+
+        pos = getattr(config, "player_pos_ab", None)
+        if not pos:
+            return False
+        cx, cy = pos
+
+        if tx >= 0 and abs(cx - tx) > tol_x:
+            return False
+        if ty >= 0 and abs(cy - ty) > tol_y:
+            return False
+        return True
+
+    def _move_to_safe_ladder_before_switch(self):
+        wp = SimpleNamespace(
+            x=int(getattr(df, "CHANNEL_SWITCH_SAFE_LADDER_X", 35)),
+            y=int(getattr(df, "CHANNEL_SWITCH_SAFE_LADDER_Y", 119)),
+            end_y=int(getattr(df, "CHANNEL_SWITCH_SAFE_LADDER_END_Y", 84)),
+            action="ladder",
+            count=1,
+            in_place=False,
+        )
+        deadline = time.time() + float(getattr(df, "CHANNEL_SWITCH_SAFE_LADDER_TIMEOUT_SEC", 25))
+
+        while time.time() < deadline and config.enabled:
+            pos = getattr(config, "player_pos_ab", None)
+            if not pos:
+                time.sleep(0.05)
+                continue
+
+            self.found_monster = False
+            if self.reached(wp):
+                if self.do_action(wp):
+                    return True
+            else:
+                self.move_toward(wp.x, wp.action)
+                if not self._probe_stuck_and_jump():
+                    self._probe_stuck_and_force_move()
+            time.sleep(0.05)
+
+        return False
 
     def move_toward(self, target_x, action):
-        if self.found_monster :
+        if self.found_monster and not self._ignore_monster_for_channel_switch:
             return
         cur_x = config.player_pos_ab[0]
         dx = target_x - cur_x
@@ -670,5 +1031,3 @@ class Bot:
             pyautogui.keyDown(self.attack_key)
             time.sleep(dur)
             pyautogui.keyUp(self.attack_key)
-
-

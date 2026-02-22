@@ -136,7 +136,12 @@ class Listener:
             config.gui.monitor.refresh_routine()
 
             try:
+                if getattr(config, "bot", None) and hasattr(config.bot, "reload_runtime_settings"):
+                    config.bot.reload_runtime_settings()
+                if getattr(config, "capture", None) and hasattr(config.capture, "rebind_window"):
+                    config.capture.rebind_window(force_move=True)
                 if getattr(config, "listener", None):
+                    config.listener.reload_buffs_from_config()
                     config.listener._prime_buffs_on_enable()
             except Exception as e:
                 print(f"[Listener] prime buffs on enable failed: {e}")
