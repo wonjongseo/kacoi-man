@@ -10,9 +10,14 @@ class RoutePatrol:
         self.index = 0
 
     def current_wp(self):
+       if not self.items:
+           return None
        return self.items[self.index]
 
     def advance(self):
+        if not self.items:
+            self.index = 0
+            return
         self.index = (self.index + 1) % len(self.items)
         config.gui.monitor.refresh_routine(current_index = self.index)
 
@@ -132,7 +137,7 @@ class Bot:
         if (now - self._fm_last_exec_t) < self._fm_cooldown:
             return False
 
-        if dx < self._stuck_confirm_sec:
+        if dx < self._stuck_eps_px:
             # 정체 시작
             if self._fm_stuck_since is None:
                 self._fm_stuck_since = now
@@ -147,7 +152,7 @@ class Bot:
                 self._ensure_key('left',  'left_down',  False)
                 self._ensure_key('right', 'right_down', False)
 
-                escape_dir = self.prev_direction
+                escape_dir = self.prev_direction if self.prev_direction in ("left", "right") else "right"
                 
                 self._ensure_key(escape_dir, f'{escape_dir}_down', True)
                 pyautogui.keyDown(self.jump_key)
@@ -280,7 +285,13 @@ class Bot:
                         
                 else:
                     self._ensure_key('z', 'z_down', True)
+                    if not config.routine or not getattr(config.routine, "items", None):
+                        time.sleep(0.05)
+                        continue
                     wp = config.routine.current_wp()
+                    if wp is None:
+                        time.sleep(0.05)
+                        continue
                     cur_x, cur_y = config.player_pos_ab
 
                     dx = wp.x - cur_x

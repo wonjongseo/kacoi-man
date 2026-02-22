@@ -1,2 +1,9 @@
-pip install numpy mss opencv-python-headless keyboard pyautogui Pillow
+numpy
+mss
+opencv-python-headless
+keyboard
+pyautogui
+Pillow
+pygame
+pywin32
 

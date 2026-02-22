@@ -1,5 +1,5 @@
 {
-  "monster_dir": "C:/Users/visio/Desktop/develop/jonggack_macro/assets/monsters/two_cross_way",
+  "monster_dir": "C:/Users/visio/Desktop/develop/kacoi-man/assets/monsters/two_cross_way",
   "hp_pct": 50,
   "mp_pct": 50,
   "hp_key": "del",
@@ -22,7 +22,7 @@
     "character": {
       "hp_bar": "",
       "mp_bar": "",
-      "name": "C:/Users/visio/Desktop/develop/jonggack_macro/assets/charactor3.png"
+      "name": "C:/Users/visio/Desktop/develop/kacoi-man/assets/charactor3.png"
     },
     "misc": {
       "revive_message": ""

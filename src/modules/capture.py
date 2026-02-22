@@ -27,24 +27,30 @@ MINIMAP_TOP_BORDER = 0 #5
 
 MINIMAP_BOTTOM_BORDER = 0 #9 
 
-WINDOWED_OFFSET_TOP = 0 #36 # 창 모드일 때 타이틀 바 높이 보정
-WINDOWED_OFFSET_LEFT = 0 #10 # 창 모드일 때 좌측 보정
+WINDOWED_OFFSET_TOP = 0 #36 # 李?紐⑤뱶??????댄? 諛??믪씠 蹂댁젙
+WINDOWED_OFFSET_LEFT = 0 #10 # 李?紐⑤뱶????醫뚯륫 蹂댁젙
 
 PLAYER_INFO_TOP = 620
 
 MM_TL_TEMPLATE = cv2.imread(utils.resource_path('assets/minimap_topLeft.png'), 0)
 MM_BR_TEMPLATE = cv2.imread(utils.resource_path('assets/minimap_bottomRight.png'), 0)
 
-# 이 (MMT_HEIGHT, MMT_WIDTH) 크기만큼은 최소한 확보해야 템플릿 전체가 포함된다
-MMT_HEIGHT = max(MM_TL_TEMPLATE.shape[0], MM_BR_TEMPLATE.shape[0])
-MMT_WIDTH = max(MM_TL_TEMPLATE.shape[1], MM_BR_TEMPLATE.shape[1])
+# ??(MMT_HEIGHT, MMT_WIDTH) ?ш린留뚰겮? 理쒖냼???뺣낫?댁빞 ?쒗뵆由??꾩껜媛 ?ы븿?쒕떎
+if MM_TL_TEMPLATE is not None and MM_BR_TEMPLATE is not None:
+    MMT_HEIGHT = max(MM_TL_TEMPLATE.shape[0], MM_BR_TEMPLATE.shape[0])
+    MMT_WIDTH = max(MM_TL_TEMPLATE.shape[1], MM_BR_TEMPLATE.shape[1])
+else:
+    MMT_HEIGHT, MMT_WIDTH = 1, 1
 
 PLAYER_TEMPLATE = cv2.imread(utils.resource_path('assets/me.png'), 0)
-PT_HEIGHT, PT_WIDTH = PLAYER_TEMPLATE.shape
+if PLAYER_TEMPLATE is not None:
+    PT_HEIGHT, PT_WIDTH = PLAYER_TEMPLATE.shape
+else:
+    PT_HEIGHT, PT_WIDTH = 1, 1
 
 
 # PLAYER_NAME_TEMPLATE = cv2.imread('assets/charactor.png', 0)
-PLAYER_HEIGHT = 70 # 실제 캐릭터 높이
+PLAYER_HEIGHT = 70 # ?ㅼ젣 罹먮┃???믪씠
 
 #
 # MONSTERS_FOLDER = 'assets/monsters/pigsBitch'
@@ -53,15 +59,17 @@ PLAYER_HEIGHT = 70 # 실제 캐릭터 높이
 
 class Capture:
     def _ensure_templates(self):
-        """템플릿을 1회 로드하고 파생 크기 계산 (PyInstaller 대응)."""
+        """?쒗뵆由우쓣 1??濡쒕뱶?섍퀬 ?뚯깮 ?ш린 怨꾩궛 (PyInstaller ???."""
         if self._mm_tl_tmpl is None:
             self._mm_tl_tmpl = cv2.imread(utils.resource_path('assets/minimap_topLeft.png'), 0)
         if self._mm_br_tmpl is None:
             self._mm_br_tmpl = cv2.imread(utils.resource_path('assets/minimap_bottomRight.png'), 0)
         if self._player_tmpl is None:
             self._player_tmpl = cv2.imread(utils.resource_path('assets/me.png'), 0)
+        if self._mm_tl_tmpl is None or self._mm_br_tmpl is None or self._player_tmpl is None:
+            raise FileNotFoundError("Required minimap/player templates are missing.")
 
-        # 파생 크기
+        # ?뚯깮 ?ш린
         th1, tw1 = self._mm_tl_tmpl.shape[:2]
         th2, tw2 = self._mm_br_tmpl.shape[:2]
         self._MMT_HEIGHT = max(th1, th2)
@@ -75,16 +83,24 @@ class Capture:
 
         config.capture = self
 
-        # 프레임과 미니맵 관련 속성 초기화
-        self.frame = None                 # 전체 화면 캡처 이미지
-        self.minimap = {}                 # GUI에 전달할 미니맵 정보
-        self.minimap_ratio = 1            # 미니맵 가로/세로 비율
-        self.minimap_sample = None        # 미니맵 캘리브레이션 샘플
+        # ?꾨젅?꾧낵 誘몃땲留?愿???띿꽦 珥덇린??
+        self.frame = None                 # ?꾩껜 ?붾㈃ 罹≪쿂 ?대?吏
+        self.minimap = {}                 # GUI???꾨떖??誘몃땲留??뺣낫
+        self.minimap_ratio = 1            # 誘몃땲留?媛濡??몃줈 鍮꾩쑉
+        self.minimap_sample = None        # 誘몃땲留?罹섎━釉뚮젅?댁뀡 ?섑뵆
 
-        # mss 스크린샷 객체 초기화 자리 표시
+        # mss ?ㅽ겕由곗꺑 媛앹껜 珥덇린???먮━ ?쒖떆
         self.sct = None
+        self._mm_tl_tmpl = MM_TL_TEMPLATE
+        self._mm_br_tmpl = MM_BR_TEMPLATE
+        self._player_tmpl = PLAYER_TEMPLATE
+        self._MMT_HEIGHT = MMT_HEIGHT
+        self._MMT_WIDTH = MMT_WIDTH
+        self._PT_HEIGHT = PT_HEIGHT
+        self._PT_WIDTH = PT_WIDTH
+        self._ensure_templates()
 
-        # 캡처 대상 윈도우 영역 (left, top, width, height)
+        # 罹≪쿂 ????덈룄???곸뿭 (left, top, width, height)
         self.window = { 
             'left' : 0,
             'top' : 0,
@@ -92,10 +108,10 @@ class Capture:
             'height': config.SCREEN_HEIGHT  # 768
         }
 
-        self.ready = False     # GUI가 최초 정보 수신을 기다릴 때 사용
-        self.calibrated = False  # 미니맵 위치 보정이 완료되었는지 여부
+        self.ready = False     # GUI媛 理쒖큹 ?뺣낫 ?섏떊??湲곕떎由????ъ슜
+        self.calibrated = False  # 誘몃땲留??꾩튂 蹂댁젙???꾨즺?섏뿀?붿? ?щ?
 
-        # 백그라운드 스레드 생성
+        # 諛깃렇?쇱슫???ㅻ젅???앹꽦
         self.thread = threading.Thread(target=self._main)
         self.thread.daemon = True
 
@@ -103,8 +119,8 @@ class Capture:
         # self.potionThread.daemon = True
         
         self.last_attack_t = 0.0
-        self.attack_interval = 0.14   # 공격 최소 간격(초) - 필요시 0.10~0.20 튜닝
-        config.attack_in_capture = True  # 캡처 스레드가 공격을 담당
+        self.attack_interval = 0.14   # 怨듦꺽 理쒖냼 媛꾧꺽(珥? - ?꾩슂??0.10~0.20 ?쒕떇
+        config.attack_in_capture = True  # 罹≪쿂 ?ㅻ젅?쒓? 怨듦꺽???대떦
 
 
         self.window_resized = False
@@ -114,14 +130,14 @@ class Capture:
         bot = getattr(config, 'bot', None)
         if not bot or not config.enabled:
             return
-        if bot.is_climbing or bot.up_down:   # 사다리 최우선
+        if bot.is_climbing or bot.up_down:   # ?щ떎由?理쒖슦??
             return
 
         now = time.time()
         if now - self.last_attack_t < self.attack_interval:
             return
 
-        # 방향 보정
+        # 諛⑺뼢 蹂댁젙
         if dir_hint == 'back':
             if bot.right_down and not bot.left_down:
                 bot.face('left')
@@ -133,10 +149,10 @@ class Capture:
             if not bot.left_down and not bot.right_down:
                 bot.face(bot.prev_direction or 'right')
 
-        # 탭 공격(락 내부)
+        # ??怨듦꺽(???대?)
         bot.tap_attack(dur=0.01)
         self.last_attack_t = now
-        bot.mark_attack()  # ← 공격 모션 진행 중 표시
+        bot.mark_attack()  # ??怨듦꺽 紐⑥뀡 吏꾪뻾 以??쒖떆
     def start(self): 
         print('\n[~] Started video capture')
         self.thread.start()
@@ -145,8 +161,8 @@ class Capture:
     def _main(self):
         """Constantly monitors the player's position and in-game events."""
         """
-            목적: Windows 전용 스크린샷 방식에서 불필요한 투명(투명창) 정보를 배제하고 빠르게 화면을 캡처하기 위해 설정
-            효과: GDI 호출 시 CAPTUREBLT 플래그를 끔으로써, 예컨대 창 위에 다른 창이 겹쳐 있더라도 비트맵(BLT) 병합 과정을 생략
+            紐⑹쟻: Windows ?꾩슜 ?ㅽ겕由곗꺑 諛⑹떇?먯꽌 遺덊븘?뷀븳 ?щ챸(?щ챸李? ?뺣낫瑜?諛곗젣?섍퀬 鍮좊Ⅴ寃??붾㈃??罹≪쿂?섍린 ?꾪빐 ?ㅼ젙
+            ?④낵: GDI ?몄텧 ??CAPTUREBLT ?뚮옒洹몃? ?붿쑝濡쒖뜥, ?덉빻? 李??꾩뿉 ?ㅻⅨ 李쎌씠 寃뱀퀜 ?덈뜑?쇰룄 鍮꾪듃留?BLT) 蹂묓빀 怨쇱젙???앸왂
         """
         mss.windows.CAPTUREBLT = 0
 
@@ -170,18 +186,18 @@ class Capture:
                     pass
                 handle_windows.activate_window(win.title)
                 config.TITLE = win.title
-                print(f"[INFO] '{win.title}' 창 크기 설정 완료.")
+                print(f"[INFO] '{win.title}' 李??ш린 ?ㅼ젙 ?꾨즺.")
                 self.window_resized = True
                 time.sleep(0.5)
             else:
-                print(f"[ERROR] 창을 찾을 수 없음: '{config.TITLE}'")
+                print(f"[ERROR] 李쎌쓣 李얠쓣 ???놁쓬: '{config.TITLE}'")
         while not (config.macro_shutdown_evt and config.macro_shutdown_evt.is_set()):
             self.roop_screen()
             time.sleep(0.001)
     def stop(self):
         if config.macro_shutdown_evt:
             config.macro_shutdown_evt.set()
-        # 필요시 조인
+        # ?꾩슂??議곗씤
         # if self.thread and self.thread.is_alive():
         #     self.thread.join(timeout=2)
     def roop_screen(self):
@@ -193,17 +209,17 @@ class Capture:
 
         self.window['left'] = rect[0]
         self.window['top'] = rect[1]
-        self.window['width'] = max(rect[2] - rect[0], MMT_WIDTH)
-        self.window['height'] = max(rect[3] - rect[1], MMT_HEIGHT)
+        self.window['width'] = max(rect[2] - rect[0], self._MMT_WIDTH)
+        self.window['height'] = max(rect[3] - rect[1], self._MMT_HEIGHT)
         
         with mss.mss() as self.sct:
             self.frame = self.screenshot()
         if self.frame is None:
             return
 
-        tl, _ = utils.single_match(self.frame, MM_TL_TEMPLATE)
+        tl, _ = utils.single_match(self.frame, self._mm_tl_tmpl)
         
-        _, br = utils.single_match(self.frame, MM_BR_TEMPLATE)
+        _, br = utils.single_match(self.frame, self._mm_br_tmpl)
 
         mm_tl = (
             tl[0] + MINIMAP_BOTTOM_BORDER,
@@ -211,16 +227,17 @@ class Capture:
         )
     
         mm_br = (
-            max(mm_tl[0] + PT_WIDTH, br[0] - MINIMAP_BOTTOM_BORDER), # 왜 ?
-            max(mm_tl[1] + PT_HEIGHT, br[1] - MINIMAP_BOTTOM_BORDER)
+            max(mm_tl[0] + self._PT_WIDTH, br[0] - MINIMAP_BOTTOM_BORDER), # ???
+            max(mm_tl[1] + self._PT_HEIGHT, br[1] - MINIMAP_BOTTOM_BORDER)
         )
         
-        self.minimap_ratio = (mm_br[0] - mm_tl[0]) / (mm_br[1] - mm_tl[1]) # 계산식 이해 안된데 ?
-        self.minimap_sample = self.frame[mm_tl[1]:mm_br[1], mm_tl[0]:mm_br[0]] # 계산식 이해 안된데 ?
+        self.minimap_ratio = (mm_br[0] - mm_tl[0]) / (mm_br[1] - mm_tl[1]) # 怨꾩궛???댄빐 ?덈맂???
+        self.minimap_sample = self.frame[mm_tl[1]:mm_br[1], mm_tl[0]:mm_br[0]] # 怨꾩궛???댄빐 ?덈맂???
         self.calibrated = True
 
         MONSTERS_FOLDER = config.setting_data.monster_dir
-        MONSTER_TEMPLATES = utils.load_templates(MONSTERS_FOLDER)
+        MONSTER_TEMPLATES = utils.load_templates(MONSTERS_FOLDER) or []
+        player_name_template = cv2.imread(config.setting_data.templates.character.name, 0)
 
         with mss.mss() as self.sct:
             while not (config.macro_shutdown_evt and config.macro_shutdown_evt.is_set()):
@@ -230,11 +247,10 @@ class Capture:
                 if self.frame is None:
                     continue
                 else:
-                    self.frame = self.frame[:PLAYER_INFO_TOP, ::] # 하단의 캐릭터 이름 / 레벨 위치 제거
+                    self.frame = self.frame[:PLAYER_INFO_TOP, ::] # ?섎떒??罹먮┃???대쫫 / ?덈꺼 ?꾩튂 ?쒓굅
 
-                # 잘라 놓은 샘플 좌표로 미니맵만 잘라냄
                 minimap = self.frame[ mm_tl[1]:mm_br[1], mm_tl[0]:mm_br[0] ]
-                player = utils.multi_match(minimap, PLAYER_TEMPLATE, threshold=0.8)
+                player = utils.multi_match(minimap, self._player_tmpl, threshold=0.8)
                 
 
                 config.margin_tl = self.window['left'] + mm_tl[0]
@@ -246,8 +262,9 @@ class Capture:
 
                 frame_h, frame_w = self.frame.shape[:2]
                 cropped_frame = self.frame[0:frame_h+100, :]
-                PLAYER_NAME_TEMPLATE =  cv2.imread(config.setting_data.templates.character.name, 0)
-                player_name = utils.single_match(cropped_frame, PLAYER_NAME_TEMPLATE)
+                player_name = None
+                if player_name_template is not None:
+                    player_name = utils.single_match(cropped_frame, player_name_template)
 
                 if player_name :
                     x , y = utils.center_from_bounds(*player_name)
@@ -283,36 +300,36 @@ class Capture:
                         config.bot.monster_dir = None
                         continue
 
-                    # 앞/뒤 영역 계산 (x1,y1,x2,y2)
+                    # ?????곸뿭 怨꾩궛 (x1,y1,x2,y2)
                     if facing_left and facing_right == False :
-                        # 왼쪽이 앞
+                        # ?쇱そ????
                         fx1, fx2 = px - front, px + back
                         bx1, bx2 = px - back,  px + front
                     elif facing_right and facing_left == False:
-                        # 오른쪽이 앞
+                        # ?ㅻⅨ履쎌씠 ??
                         fx1, fx2 = px - back,  px + front
                         bx1, bx2 = px - front, px + back
                     else:
                         config.bot.found_monster = False
-                        return  # 또는 continue
+                        return  # ?먮뒗 continue
 
                     fy1, fy2 = py - up, py + down
                     by1, by2 = fy1, fy2
 
-                    # 클램프
+                    # ?대옩??
                     fx1 = max(0, int(fx1)); fy1 = max(0, int(fy1))
                     fx2 = min(W, int(fx2)); fy2 = min(H, int(fy2))
 
                     bx1 = max(0, int(bx1)); by1 = max(0, int(by1))
                     bx2 = min(W, int(bx2)); by2 = min(H, int(by2))
 
-                    # 잘못된 영역 방지
+                    # ?섎せ???곸뿭 諛⑹?
                     if fx2 <= fx1 or fy2 <= fy1 or bx2 <= bx1 or by2 <= by1:
                         config.bot.found_monster = False
                         config.bot.monster_dir = None
                         continue
 
-                    # ROI 추출
+                    # ROI 異붿텧
                     front_roi = self.frame[fy1:fy2, fx1:fx2]
                     back_roi  = self.frame[by1:by2, bx1:bx2]
 
@@ -320,7 +337,7 @@ class Capture:
                     front_gray = cv2.cvtColor(front_roi, cv2.COLOR_BGRA2GRAY) if front_roi.size != 0 else None
                     back_gray  = cv2.cvtColor(back_roi,  cv2.COLOR_BGRA2GRAY)  if back_roi.size  != 0 else None
 
-                    # 탐지 (※ 회전/공격은 하지 않는다!)
+                    # ?먯? (???뚯쟾/怨듦꺽? ?섏? ?딅뒗??)
                     back_found  = self._has_monster(back_gray,  MONSTER_TEMPLATES, threshold=0.7)
                     front_found = self._has_monster(front_gray, MONSTER_TEMPLATES, threshold=0.7)
                     
@@ -332,16 +349,16 @@ class Capture:
                     elif front_found == False and back_found:
                         config.bot.found_monster = True
                         config.bot.monster_dir = 'back'
-                        # 즉시 공격
+                        # 利됱떆 怨듦꺽
                         self._attack_immediate('back')
-                        # utils.capture_minimap(bx1, by1, bx2, by2)  # 디버그 필요 시만
+                        # utils.capture_minimap(bx1, by1, bx2, by2)  # ?붾쾭洹??꾩슂 ?쒕쭔
                     elif front_found and back_found == False :
                         config.bot.found_monster = True
                         config.bot.monster_dir = 'front'
                         self._attack_immediate('front')
                         # utils.capture_minimap(fx1, fy1, fx2, fy2)
                     else:
-                        # 공격 키가 눌린 채로 남지 않도록 정리
+                        # 怨듦꺽 ?ㅺ? ?뚮┛ 梨꾨줈 ?⑥? ?딅룄濡??뺣━
                         bot = getattr(config, 'bot', None)
                         if bot and bot.shift_down:
                             pyautogui.keyUp(bot.attack_key)
@@ -358,7 +375,7 @@ class Capture:
         bot = getattr(config, 'bot', None)
         if not bot:
             return
-        bot.face(to_dir)  # <<<<<< 단 한 줄만
+        bot.face(to_dir)  # <<<<<< ????以꾨쭔
     def _has_monster(self, gray_area, templates, threshold=0.7):
         if gray_area is None or gray_area.size == 0:
             return False

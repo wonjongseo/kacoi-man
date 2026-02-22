@@ -1,2 +1,0 @@
-game_setting2.json
-hjeneshisu1.json

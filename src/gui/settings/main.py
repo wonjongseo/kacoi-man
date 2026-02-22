@@ -412,7 +412,7 @@ class Settings(Tab):
 
         self.var_monster_dir.set(cfg.monster_dir)
         self.var_hp_pct.set(getattr(cfg, "hp_pct", dv.HP_PERCENT))
-        self.var_mp_pct.set(getattr(cfg, "hp_pct", dv.MP_PERCENT))
+        self.var_mp_pct.set(getattr(cfg, "mp_pct", dv.MP_PERCENT))
         self.var_hp_key.set(getattr(cfg, "hp_key", dv.HP_KEY))  
         self.var_mp_key.set(getattr(cfg, "mp_key", dv.MP_KEY))  
         self.var_jump_key.set(getattr(cfg, "jump_key", dv.JUMP_KEY))

@@ -107,7 +107,7 @@ if game_setting:
             gui.monitor.refresh_routine()
 
         if hasattr(gui, "game_setting"):
-            gui.game_setting.start_bot()
+            gui.game_setting._apply(show_msg=False)
     except Exception as e:
         utils.display_message("불러오기 실패", "게임 설정 형식의 파일이 아니여서 불러오기에 실패했습니다.")
             
