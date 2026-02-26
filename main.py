@@ -132,3 +132,9 @@ gui.start()
 
 
 # fpyinstaller main.py --onefile --noconsole  --add-data "assets;assets"
+
+
+#cd c:\Users\wonjongseo\Desktop\develop\kacoi-man
+#.\.venv\Scripts\python.exe main.py
+
+#

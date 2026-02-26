@@ -69,7 +69,7 @@ class Bot:
 
         self._stuck_eps_px = 1.0
         self._stuck_confirm_sec = 3
-        self._jump_cooldown = 5
+        self._stuck_jump_confirm_sec = 1.5
        
 
         self.is_climbing = False
@@ -222,16 +222,21 @@ class Bot:
         self._ensure_key('z',  'z_down', True)
 
     def _probe_stuck_and_jump(self):
-        if self.shift_down or self.up_down:
+        moving_horizontally = bool(self.left_down or self.right_down)
+        if self.shift_down or self.up_down or self.is_climbing or (not moving_horizontally):
+            self._stuck_since = None
+            self._last_x = None
+            self._jump_tries = 0
+            return False
+
+        now = time.time()
+        if now < self.attack_anim_until:
             self._stuck_since = None
             self._last_x = None
             self._jump_tries = 0
             return False
 
         x = config.player_pos_ab[0]
-
-
-        now = time.time()
 
         if self._stuck_since is None:
                 self._stuck_since = now
@@ -249,7 +254,7 @@ class Bot:
                 return False
 
 
-            if (now - self._stuck_since) >= self._stuck_confirm_sec :
+            if (now - self._stuck_since) >= self._stuck_jump_confirm_sec :
                 pyautogui.press(self.jump_key)
                 self._last_jump_t = now
                 self._jump_tries += 1
